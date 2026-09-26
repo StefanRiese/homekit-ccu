@@ -559,5 +559,9 @@
   "The installation failed": "Die Installation ist fehlgeschlagen",
   "Not installed": "Nicht installiert",
   "The status of ffmpeg is not available.": "Der Stand von ffmpeg ist nicht abrufbar.",
-  "The video source must be a URL like rtsp://camera/stream or ffmpeg input arguments starting with - (e.g. -re -f lavfi -i testsrc)": "Die Videoquelle muss eine URL wie rtsp://kamera/stream sein oder ffmpeg-Eingabeargumente, die mit - beginnen (z. B. -re -f lavfi -i testsrc)"
+  "The video source must be a URL like rtsp://camera/stream or ffmpeg input arguments starting with - (e.g. -re -f lavfi -i testsrc)": "Die Videoquelle muss eine URL wie rtsp://kamera/stream sein oder ffmpeg-Eingabeargumente, die mit - beginnen (z. B. -re -f lavfi -i testsrc)",
+  "unknown program": "Das Programm gibt es in der CCU nicht (mehr).",
+  "unknown service": "Unbekannter Gerätetyp.",
+  "unknown variable": "Die Variable gibt es in der CCU nicht (mehr).",
+  "no answer": "keine Antwort vom Konfigurationsdienst"
 }
