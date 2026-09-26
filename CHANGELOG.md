@@ -4,7 +4,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/). Versions up to 0.0.64 are those of hap-homematic.
 
-## [0.1.2] - unreleased
+## [0.1.2] - 2026-09-26
 
 ### Added
 - Doorbells that Apple Home shows as doorbell: Apple Home knows a doorbell only as part of a camera, so a doorbell now has a camera with a still image, without ffmpeg and without live video. It is listed under "Cameras & Doorbells", a ring is notified with the picture and plays the chime on a HomePod. Like a video doorbell has to (HAP 11.3.2) it has a microphone and a speaker, which never stream. HmIP-DSD-PCB, HmIP-DBB and HM-Sen-DB-PCB are added as doorbell (the other choice is a programmable switch; windows, doors and the like are no longer offered for them); any other key or contact becomes one as special device "Doorbell". The picture is the one of the device in the CCU, a URL, a file, or one uploaded in the settings (stored with the configuration, so the backup has it). A picture that is replaced, like the snapshot a camera stores behind a URL, is read again when Apple Home asks for it, at most every 10 s (adjustable) and in the background; camera pictures fill the tile. The HmIP-DSD-PCB rings on a key press, or on its state when its channel is set to switch or contact mode in the CCU. Rings closer than 3 s count once.
