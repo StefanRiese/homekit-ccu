@@ -17,6 +17,13 @@ describe('HomeKit-CCU security hardening', () => {
       expect(withoutSecrets('text')).to.be('text')
     })
 
+    // 0.1.2-rc.5: the settings of a video doorbell in the socket message carried the RTSP password
+    it('replaces URL credentials in the values of objects', () => {
+      const payload = { settings: { video_source: '-rtsp_transport tcp -i rtsp://homekit:secret@192.168.0.110:8555/Camera01/sub', port: 8555 } }
+      expect(withoutSecrets(payload)).to.eql({ settings: { video_source: '-rtsp_transport tcp -i rtsp://***@192.168.0.110:8555/Camera01/sub', port: 8555 } })
+      expect(withoutSecrets('http://user:pw@cam/x')).to.be('http://***@cam/x')
+    })
+
     it('replaces session ids and URL credentials in text', () => {
       expect(redactText('var s = "@abcdefghij@"; http://user:secret@cam/x rtsp://cam/x'))
         .to.be('var s = "@***@"; http://***@cam/x rtsp://cam/x')
