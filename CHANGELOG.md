@@ -4,6 +4,15 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/). Versions up to 0.0.64 are those of hap-homematic.
 
+## [Unreleased]
+
+### Fixed
+- On a CCU that runs the add-on itself, an interface that was quiet for 300 s got no events any more until the add-on was restarted: the watchdog registered it again with the address of the machine, but the event server of a local CCU listens only on 127.0.0.1. It happened on quiet interfaces, for example BidCos-RF with few devices at night, or CUxD. The watchdog now registers with the same address as the first connect.
+- HM-Sec-SD-2: a degraded smoke chamber was never reported as fault. The datapoint was written `1:ERROR_SMOKE_CHAMBER` instead of `1.ERROR_SMOKE_CHAMBER` and looked up on a channel that does not exist.
+- HM-TC-IT-WM-W-EU: the low temperature of the Eve schedule was 17 °C again after every restart (saved as `tempLow`, read as `tempLo`), and the next change of the schedule sent 17 °C to every low period of the week program on the thermostat.
+- A number setting of 0 was shown as its default in the settings dialogs, e.g. *Read the picture again after* 0 as 10, and saving the dialog for any other change stored the default.
+- The dialog of variables and programs replaced a stored 0, a switched off checkbox or an empty text with the default when it was saved, for example `AWAY_ARM` 0 of an alarm variable became 1 after only renaming it. A default of 0 was never filled in. A stored empty text is also shown as empty now.
+
 ## [0.1.2] - 2026-09-26
 
 ### Added
