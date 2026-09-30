@@ -1,7 +1,8 @@
 'use strict'
 
 // A doorbell without camera: hap's DoorbellController (a camera controller with the doorbell as
-// primary service) whose camera only delivers the still image and refuses live video.
+// primary service) whose camera delivers the still image as snapshot and as live video (the
+// stream itself in 223_still_stream.js).
 
 const path = require('path')
 const expect = require('expect.js')
@@ -29,12 +30,15 @@ describe('HomeKit-CCU doorbell with a still image', () => {
   it('logs the first snapshot and the first live video request, then only in debug mode', async () => {
     const lines = []
     const recording = { debug: () => {}, info: (...args) => lines.push(args.join(' ')), warn: () => {}, error: () => {} }
-    const delegate = new StillImageDelegate(stillImage(), 'Door', recording)
+    const delegate = new StillImageDelegate({ ...stillImage(), frame: () => new Promise(() => {}) }, 'Door', recording)
     const snapshot = () => new Promise(resolve => delegate.handleSnapshotRequest({ width: 64, height: 36 }, resolve))
     await snapshot()
     await snapshot()
-    await new Promise(resolve => delegate.prepareStream({ sessionID: 'a' }, resolve))
-    await new Promise(resolve => delegate.prepareStream({ sessionID: 'b' }, resolve))
+    delegate.sessions.set('a', {})
+    delegate.sessions.set('b', {})
+    const start = (sessionID) => new Promise(resolve => delegate.handleStreamRequest({ sessionID, type: 'start', video: { width: 1280, height: 720 } }, resolve))
+    await start('a')
+    await start('b')
     expect(lines.length).to.be(2)
     expect(lines[0]).to.contain('snapshot')
     expect(lines[1]).to.contain('live video')
@@ -58,17 +62,6 @@ describe('HomeKit-CCU doorbell with a still image', () => {
     const jpg = await new Promise((resolve, reject) => delegate.handleSnapshotRequest({ width: 640, height: 360 }, (error, buffer) => error ? reject(error) : resolve(buffer)))
     const image = jpeg.decode(jpg, { useTArray: true })
     expect([image.width, image.height]).to.eql([640, 360])
-  })
-
-  it('refuses live video instead of letting Apple Home wait', (done) => {
-    const delegate = new StillImageDelegate(stillImage(), 'Door', log)
-    delegate.prepareStream({ sessionID: 'a' }, (error) => {
-      expect(error).to.be.an(Error)
-      delegate.handleStreamRequest({ sessionID: 'a', type: 'stop' }, (stopError) => {
-        expect(stopError).to.be(undefined)
-        done()
-      })
-    })
   })
 
   it('reports a failing snapshot as error', (done) => {

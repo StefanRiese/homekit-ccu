@@ -53,7 +53,7 @@ HomeKit-CCU reads the members from the group management of the CCU (`groups.gson
 
 ## Doorbells
 
-Apple Home shows a doorbell only as part of a camera; a doorbell on its own is "Not Supported". A doorbell of HomeKit-CCU therefore has a camera that shows a still image: Apple Home lists it under *Cameras & Doorbells*, notifies a ring with the picture and plays the chime on a HomePod. Tapping the tile shows no live video, there is none.
+Apple Home shows a doorbell only as part of a camera; a doorbell on its own is "Not Supported". A doorbell of HomeKit-CCU therefore has a camera that shows a still image: Apple Home lists it under *Cameras & Doorbells*, notifies a ring with the picture and plays the chime on a HomePod. Tapping the tile shows the picture as live video: homekit-ccu sends it as an H.264 stream it makes itself, without ffmpeg. The stream is at most 640x480 and carries the picture uncompressed, so it is sent in full only every few seconds (as often as the bit rate Apple Home asks for allows) and the frames between only repeat it; on a slow remote connection the picture may take some seconds to appear.
 
 - **HmIP-DSD-PCB, HmIP-DBB, HM-Sen-DB-PCB** are added as doorbell; the other choice is a programmable switch for automations. The HmIP-DSD-PCB rings on a key press (its factory setting "Taster"); when its channel is set to switch or contact mode in the CCU, it rings when the bell voltage appears.
 - **Any other key or contact** becomes a doorbell with *Special devices → New → Doorbell*: choose the datapoint that rings, a key press (`PRESS_SHORT`) or a state (`STATE`) that becomes active.

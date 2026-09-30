@@ -4,6 +4,11 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/). Versions up to 0.0.64 are those of hap-homematic.
 
+## [Unreleased]
+
+### Changed
+- A doorbell without camera shows its picture as live video: opening the tile in Apple Home showed the picture for a moment and then a crossed out camera, because the camera refused live video. The picture is now sent as an H.264 stream over SRTP that homekit-ccu makes itself in JavaScript, still without ffmpeg: an IDR frame with the picture uncompressed (at most 640x480), repeated as often as the bit rate Apple Home asks for allows (every 2 to 20 s), and frames between that only repeat it. A session ends when Apple Home stops it, the viewer disconnects, or the viewer stops sending RTCP after it sent some.
+
 ## [0.1.2] - 2026-09-26
 
 ### Added
