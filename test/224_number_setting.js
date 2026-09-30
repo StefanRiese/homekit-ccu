@@ -27,6 +27,14 @@ describe('HomeKit-CCU number settings in the form', () => {
     expect(numberSetting(NaN, 10)).to.be(10)
   })
 
+  it('shows a stored empty text as empty, the default only when nothing is stored', async () => {
+    const { textSetting } = await load()
+    expect(textSetting('', 'Alarm')).to.be('')
+    expect(textSetting('Door', 'Alarm')).to.be('Door')
+    expect(textSetting(undefined, 'Alarm')).to.be('Alarm')
+    expect(textSetting(undefined, undefined)).to.be('')
+  })
+
   it('keeps a stored 0, false or empty text when the default is filled in', async () => {
     const { fillDefault } = await load()
     // e.g. the alarm variable: AWAY_ARM 0 (default 1), a checkbox off whose default is on
