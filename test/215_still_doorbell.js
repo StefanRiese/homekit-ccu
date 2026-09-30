@@ -30,7 +30,7 @@ describe('HomeKit-CCU doorbell with a still image', () => {
   it('logs the first snapshot and the first live video request, then only in debug mode', async () => {
     const lines = []
     const recording = { debug: () => {}, info: (...args) => lines.push(args.join(' ')), warn: () => {}, error: () => {} }
-    const delegate = new StillImageDelegate({ ...stillImage(), frame: () => new Promise(() => {}) }, 'Door', recording)
+    const delegate = new StillImageDelegate({ ...stillImage(), frame: () => new Promise(() => {}) }, 'Door', recording, { liveVideo: true })
     const snapshot = () => new Promise(resolve => delegate.handleSnapshotRequest({ width: 64, height: 36 }, resolve))
     await snapshot()
     await snapshot()
@@ -62,6 +62,28 @@ describe('HomeKit-CCU doorbell with a still image', () => {
     const jpg = await new Promise((resolve, reject) => delegate.handleSnapshotRequest({ width: 640, height: 360 }, (error, buffer) => error ? reject(error) : resolve(buffer)))
     const image = jpeg.decode(jpg, { useTArray: true })
     expect([image.width, image.height]).to.eql([640, 360])
+  })
+
+  it('refuses live video unless "Picture as live video" is switched on', (done) => {
+    const delegate = new StillImageDelegate(stillImage(), 'Door', log)
+    delegate.prepareStream({ sessionID: 'a', addressVersion: 'ipv4' }, (error) => {
+      expect(error).to.be.an(Error)
+      expect(delegate.sessions.size).to.be(0)
+      delegate.handleStreamRequest({ sessionID: 'a', type: 'stop' }, (stopError) => {
+        expect(stopError).to.be(undefined)
+        done()
+      })
+    })
+  })
+
+  it('passes "Picture as live video" of the settings to the camera', () => {
+    const { liveVideo, IMAGE_SETTINGS } = require(path.join(__dirname, '..', 'lib', 'services', 'camera', 'doorbellSettings.js'))
+    expect(IMAGE_SETTINGS.liveVideo.default).to.be(false)
+    expect([undefined, false, 'false', true, 'true'].map(value => liveVideo(() => value))).to.eql([false, false, false, true, true])
+    const off = configureStillDoorbell(new Accessory('Door', uuid.generate('still-doorbell-3')), stillImage(), 'Door', log)
+    const on = configureStillDoorbell(new Accessory('Door', uuid.generate('still-doorbell-4')), stillImage(), 'Door', log, { liveVideo: true })
+    expect(off.controller.delegate.liveVideo).to.be(false)
+    expect(on.controller.delegate.liveVideo).to.be(true)
   })
 
   it('reports a failing snapshot as error', (done) => {

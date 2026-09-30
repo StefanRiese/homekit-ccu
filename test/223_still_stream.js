@@ -247,7 +247,7 @@ describe('HomeKit-CCU live video of a still image', () => {
     let receiver
     const key = crypto.randomBytes(16)
     const salt = crypto.randomBytes(14)
-    const options = { bindReturnSocket: (version) => bindUdpSocket(version, 0), watchdogFloorSeconds: 0.05 }
+    const options = { liveVideo: true, bindReturnSocket: (version) => bindUdpSocket(version, 0), watchdogFloorSeconds: 0.05 }
     const frameOf = (width, height) => encodeStill(flat(width, height, [255, 255, 255]), width, height)
     const still = { snapshot: async () => Buffer.alloc(0), frame: async (width, height) => frameOf(width, height) }
 
@@ -345,7 +345,7 @@ describe('HomeKit-CCU live video of a still image', () => {
     })
 
     it('reports a port that cannot be bound', (done) => {
-      const failing = { bindReturnSocket: () => Promise.reject(new Error('taken')), bindUdpSocket: () => Promise.reject(new Error('none')) }
+      const failing = { liveVideo: true, bindReturnSocket: () => Promise.reject(new Error('taken')), bindUdpSocket: () => Promise.reject(new Error('none')) }
       new StillImageDelegate(still, 'Door', log, failing).prepareStream({ addressVersion: 'ipv4' }, (error) => {
         expect(error.message).to.be('none')
         done()
