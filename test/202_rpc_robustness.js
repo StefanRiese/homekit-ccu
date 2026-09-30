@@ -132,6 +132,74 @@ describe('HomeKit-CCU RPC connection handling', () => {
     expect(error.message).to.contain('not connected')
   })
 
+  describe('the address the CCU calls back', () => {
+    // records the init calls (the URL of the event server and the id), answers them at once
+    const recordInits = (iface) => {
+      const inits = []
+      iface.initClient.methodCall = (method, params, callback) => {
+        if (params.length === 2) {
+          inits.push(params[0])
+        }
+        if (callback) {
+          callback(null, '')
+        }
+      }
+      return inits
+    }
+
+    // connect, then let the interface be idle for longer than the watchdog allows
+    const connectAndIdle = (iface) => {
+      rpc.watchDogTimeout = 300
+      rpc.connect()
+      clearTimeout(rpc.watchDogTimer)
+      iface.lastMessage = Math.floor(Date.now() / 1000) - 301
+      iface.reconnecting = false
+      rpc.ccuWatchDog()
+      clearTimeout(rpc.watchDogTimer)
+    }
+
+    beforeEach(() => {
+      rpc.listeningPort = 9875
+      rpc.localIP = '192.168.1.100'
+    })
+
+    it('registers a local CCU with 127.0.0.1 again when the watchdog reconnects', () => {
+      rpc.addInterface('HmIP-RF', '127.0.0.1', 2010, '/')
+      const iface = rpc.interfaces[0]
+      const inits = recordInits(iface)
+      connectAndIdle(iface)
+      // the event server of a local CCU listens only on 127.0.0.1: the address of this machine
+      // could not be reached by the CCU, and the interface would get no events any more
+      expect(inits).to.eql(['http://127.0.0.1:9875', 'http://127.0.0.1:9875'])
+    })
+
+    it('takes a CCU addressed by the address of this machine for a local one as well', () => {
+      rpc.addInterface('BidCos-RF', '192.168.1.100', 2001, '/')
+      const iface = rpc.interfaces[0]
+      const inits = recordInits(iface)
+      connectAndIdle(iface)
+      expect(inits).to.eql(['http://127.0.0.1:9875', 'http://127.0.0.1:9875'])
+    })
+
+    it('registers a remote CCU with the address of this machine, also when reconnecting', () => {
+      rpc.addInterface('HmIP-RF', '192.168.1.20', 2010, '/')
+      const iface = rpc.interfaces[0]
+      const inits = recordInits(iface)
+      connectAndIdle(iface)
+      expect(inits).to.eql(['http://192.168.1.100:9875', 'http://192.168.1.100:9875'])
+    })
+
+    it('keeps the port of CUxD (event server port + 1) when reconnecting', () => {
+      rpc.addInterface('CUxD', '127.0.0.1', 8701, '/')
+      const iface = rpc.interfaces[0]
+      const inits = recordInits(iface)
+      connectAndIdle(iface)
+      expect(inits.length).to.be(2)
+      expect(inits[1]).to.be(inits[0])
+      expect(inits[0]).to.match(/127\.0\.0\.1:9876$/)
+    })
+  })
+
   it('does not start a second reconnect while the first waits for its answer', () => {
     rpc.watchDogTimeout = 1
     rpc.addInterface('CUxD', '127.0.0.1', 1, '/')
