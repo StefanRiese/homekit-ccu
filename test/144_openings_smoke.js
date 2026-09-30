@@ -106,3 +106,43 @@ describe('Openings: HmIP-SWSD detecting only its own alarm', () => {
     expect(await read(smoke)).to.be(Smoke.SMOKE_NOT_DETECTED)
   })
 })
+
+describe('Openings: HM-Sec-SD-2 smoke detector', () => {
+  let sim
+  let sensor
+
+  before(async () => {
+    sim = await simulateDevice({
+      type: 'HM-Sec-SD-2',
+      intf: 'BidCos-RF',
+      address: 'NEQ0000001',
+      channels: ['MAINTENANCE', 'SMOKE_DETECTOR'],
+      channel: 1,
+      service: 'HomeMaticSmokeDetectorAccessory',
+      values: { '0.LOWBAT': false, '1.LOWBAT': false, '1.STATE': false, '1.ERROR_SMOKE_CHAMBER': 0 }
+    })
+    sensor = findService(sim.accessory, Service.SmokeSensor)
+  })
+
+  after(() => sim.shutdown())
+
+  it('shows the alarm', async () => {
+    const smoke = sensor.getCharacteristic(Smoke)
+    sim.fire('1.STATE', true)
+    expect(smoke.value).to.be(Smoke.SMOKE_DETECTED)
+    sim.fire('1.STATE', false)
+    expect(await read(smoke)).to.be(Smoke.SMOKE_NOT_DETECTED)
+  })
+
+  // ERROR_SMOKE_CHAMBER of channel 1: 0 no error, 1 degraded smoke chamber
+  it('reports a degraded smoke chamber as fault', async () => {
+    const fault = sensor.getCharacteristic(Fault)
+    expect(await read(fault)).to.be(Fault.NO_FAULT)
+    sim.fire('1.ERROR_SMOKE_CHAMBER', 1)
+    expect(fault.value).to.be(Fault.GENERAL_FAULT)
+    expect(await read(fault)).to.be(Fault.GENERAL_FAULT)
+    sim.fire('1.ERROR_SMOKE_CHAMBER', 0)
+    expect(fault.value).to.be(Fault.NO_FAULT)
+    expect(sim.warnings).to.eql([])
+  })
+})
