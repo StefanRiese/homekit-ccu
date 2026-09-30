@@ -113,7 +113,7 @@ describe('HomeKit-CCU live video of a still image', () => {
       expect(r.ue()).to.be(0) // sps id
       expect(r.ue()).to.be(4) // log2_max_frame_num_minus4
       expect(r.ue()).to.be(0) // pic_order_cnt_type
-      expect(r.ue()).to.be(4)
+      expect(r.ue()).to.be(12) // log2_max_pic_order_cnt_lsb_minus4
       expect(r.ue()).to.be(1) // max_num_ref_frames
       expect(r.u(1)).to.be(0)
       expect(r.ue() + 1).to.be(40)
@@ -144,7 +144,34 @@ describe('HomeKit-CCU live video of a still image', () => {
       expect(r.ue()).to.be(5) // P slice
       expect(r.ue()).to.be(0)
       expect(r.u(8)).to.be(1) // frame_num after the IDR
-      expect(r.u(8)).to.be(6) // picture order count
+      expect(r.u(16)).to.be(6) // picture order count
+    })
+
+    // A decoder takes a count that is half its range above the one of the IDR frame for one
+    // before it (8.2.1.1): with 8 bits that was the 65th skipped frame, 6.5 s after the IDR frame.
+    it('counts the picture order up until the next IDR frame, also after the longest interval', () => {
+      const geometry = frameGeometry(640, 360)
+      const { sps } = encodeStill(flat(640, 360, [0, 0, 0]), 640, 360, 31)
+      const s = new BitReader(rbsp(sps))
+      s.u(24)
+      s.ue()
+      s.ue()
+      s.ue()
+      const bits = s.ue() + 4
+      // 10 frames per second, an IDR frame at least every 20 s
+      expect(idrIntervalMs(10 * 1024 * 1024, 1)).to.be(20000)
+      let last = 0
+      for (let index = 1; index <= 200; index++) {
+        const r = new BitReader(rbsp(skipFrame(geometry, index)))
+        r.ue()
+        r.ue()
+        r.ue()
+        r.u(8)
+        const count = r.u(bits)
+        expect(count).to.be.greaterThan(last)
+        expect(count).to.be.lessThan(2 ** bits / 2)
+        last = count
+      }
     })
 
     it('refuses an odd size', () => {
@@ -356,6 +383,19 @@ describe('HomeKit-CCU live video of a still image', () => {
       await start(delegate, 'c')
       await new Promise(resolve => setImmediate(resolve))
       expect(stopped).to.eql(['c'])
+    })
+
+    it('ends the session when the stream cannot be started', async () => {
+      const delegate = new StillImageDelegate(still, 'Door', log, options)
+      const stopped = []
+      delegate.attachController({ forceStopStreamingSession: (sessionID) => stopped.push(sessionID) })
+      await prepare(delegate, 'k')
+      // a key HomeKit would never send: the SRTP sender refuses it
+      delegate.sessions.get('k').videoSRTP = Buffer.alloc(8)
+      await start(delegate, 'k')
+      await new Promise(resolve => setImmediate(resolve))
+      expect(stopped).to.eql(['k'])
+      expect(delegate.sessions.size).to.be(0)
     })
 
     it('refuses to start a session that was not prepared, keeps a reconfigured one', (done) => {
