@@ -5,6 +5,9 @@
 
 const path = require('path')
 const crypto = require('crypto')
+const fs = require('fs')
+const os = require('os')
+const { PNG } = require('pngjs')
 const expect = require('expect.js')
 const camera = path.join(__dirname, '..', 'lib', 'services', 'camera')
 const { encodeStill, skipFrame, frameGeometry, nalUnit, BitWriter } = require(path.join(camera, 'h264Still.js'))
@@ -241,6 +244,28 @@ describe('HomeKit-CCU live video of a still image', () => {
       stream.send(Buffer.alloc(1))
       expect(sent[sent.length - 1]).to.be(report)
     })
+    it('sends a new picture at once, with its IDR frame, and ignores one of another size', () => {
+      const sent = []
+      const black = encodeStill(flat(32, 32, [0, 0, 0]), 32, 32)
+      const white = encodeStill(flat(32, 32, [255, 255, 255]), 32, 32)
+      const stream = new StillStream({ frame: black, socket: { send: (packet) => sent.push(packet) }, address: '127.0.0.1', port: 1, ssrc: 7, srtp: crypto.randomBytes(30), payloadType: 99 })
+      stream.startedAt = Date.now()
+      stream.nextIdrAt = 0
+      stream.idrCount = 0
+      stream.nextFrame()
+      stream.sendQueued()
+      stream.nextFrame()
+      expect(stream.queue.length).to.be(1) // a skipped frame
+      stream.sendQueued()
+      stream.setFrame(encodeStill(flat(64, 32, [255, 255, 255]), 64, 32))
+      expect(stream.frame).to.be(black)
+      stream.setFrame(white)
+      expect(stream.frame).to.be(white)
+      stream.nextFrame()
+      expect(stream.queue.length).to.be.greaterThan(2)
+      expect(stream.queue[0].payload).to.be(white.sps)
+      stream.stop()
+    })
   })
 
   describe('delegate', () => {
@@ -350,6 +375,63 @@ describe('HomeKit-CCU live video of a still image', () => {
         expect(error.message).to.be('none')
         done()
       })
+    })
+
+    it('shows a picture that changed while the live video runs', async () => {
+      let current = frameOf(320, 240)
+      const changing = { refreshMs: 1000, snapshot: async () => Buffer.alloc(0), frame: async () => current }
+      const delegate = new StillImageDelegate(changing, 'Door', log, { ...options, refreshPollMs: 20 })
+      await prepare(delegate, 'e')
+      await start(delegate, 'e')
+      await new Promise(resolve => setTimeout(resolve, 50))
+      const session = delegate.sessions.get('e')
+      expect(session.stream.frame).to.be(current)
+      current = encodeStill(flat(320, 240, [0, 0, 0]), 320, 240)
+      await new Promise(resolve => setTimeout(resolve, 80))
+      expect(session.stream.frame).to.be(current)
+      delegate.shutdown()
+      expect(session.refresh._destroyed).to.be(true)
+    })
+
+    it('does not ask for the picture again when it is read only once', async () => {
+      let asked = 0
+      const once = { refreshMs: 0, snapshot: async () => Buffer.alloc(0), frame: async (width, height) => { asked++; return frameOf(width, height) } }
+      const delegate = new StillImageDelegate(once, 'Door', log, { ...options, refreshPollMs: 20 })
+      await prepare(delegate, 'f')
+      await start(delegate, 'f')
+      await new Promise(resolve => setTimeout(resolve, 80))
+      expect(asked).to.be(1)
+      delegate.shutdown()
+    })
+
+    it('reads a replaced picture file again and sends it to the running live video', async () => {
+      const file = path.join(os.tmpdir(), `homekit-ccu-still-${process.pid}.png`)
+      const png = (value) => {
+        const image = new PNG({ width: 16, height: 16 })
+        // opaque: a transparent picture is drawn as white
+        for (let i = 0; i < image.data.length; i += 4) {
+          image.data.fill(value, i, i + 3)
+          image.data[i + 3] = 255
+        }
+        return PNG.sync.write(image)
+      }
+      fs.writeFileSync(file, png(0))
+      try {
+        const image = new StillImage([{ kind: 'file', value: file }], log, 'Door', { refreshSeconds: 0.05 })
+        const delegate = new StillImageDelegate(image, 'Door', log, { ...options, refreshPollMs: 20 })
+        await prepare(delegate, 'g')
+        await start(delegate, 'g')
+        await new Promise(resolve => setTimeout(resolve, 300))
+        const session = delegate.sessions.get('g')
+        const before = session.stream.frame
+        fs.writeFileSync(file, png(255))
+        await new Promise(resolve => setTimeout(resolve, 600))
+        expect(session.stream.frame).not.to.be(before)
+        expect(session.stream.frame.idr.equals(before.idr)).to.be(false)
+        delegate.shutdown()
+      } finally {
+        fs.unlinkSync(file)
+      }
     })
 
     it('stops all sessions on shutdown', async () => {
