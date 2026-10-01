@@ -9,6 +9,13 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 ### Added
 - *Picture as live video* in the settings of a doorbell without camera (off by default): opening the tile in Apple Home showed the picture for a moment and then a crossed out camera, because the camera refuses live video. Switched on, the picture is sent as an H.264 stream over SRTP that homekit-ccu makes itself in JavaScript, still without ffmpeg: an IDR frame with the picture uncompressed (at most 640x480), repeated as often as the bit rate Apple Home asks for allows (every 2 to 20 s), and frames between that only repeat it. A picture that is read again (*Read the picture again after*, e.g. the snapshot a camera stores) and has changed is shown by a running live video within about a second. A session ends when Apple Home stops it, the viewer disconnects, or the viewer stops sending RTCP after it sent some.
 
+### Fixed
+- On a CCU that runs the add-on itself, an interface that was quiet for 300 s got no events any more until the add-on was restarted: the watchdog registered it again with the address of the machine, but the event server of a local CCU listens only on 127.0.0.1. It happened on quiet interfaces, for example BidCos-RF with few devices at night, or CUxD. The watchdog now registers with the same address as the first connect.
+- HM-Sec-SD-2: a degraded smoke chamber was never reported as fault. The datapoint was written `1:ERROR_SMOKE_CHAMBER` instead of `1.ERROR_SMOKE_CHAMBER` and looked up on a channel that does not exist.
+- HM-TC-IT-WM-W-EU: the low temperature of the Eve schedule was 17 °C again after every restart (saved as `tempLow`, read as `tempLo`), and the next change of the schedule sent 17 °C to every low period of the week program on the thermostat.
+- A number setting of 0 was shown as its default in the settings dialogs, e.g. *Read the picture again after* 0 as 10, and saving the dialog for any other change stored the default.
+- The dialog of variables and programs replaced a stored 0, a switched off checkbox or an empty text with the default when it was saved, for example `AWAY_ARM` 0 of an alarm variable became 1 after only renaming it. A default of 0 was never filled in. A stored empty text is also shown as empty now.
+
 ## [0.1.2] - 2026-09-26
 
 ### Added
