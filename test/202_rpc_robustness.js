@@ -200,6 +200,71 @@ describe('HomeKit-CCU RPC connection handling', () => {
     })
   })
 
+  describe('an interface whose first init fails', () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+    // answers init with the given errors in turn, then successfully
+    const answerInits = (iface, errors) => {
+      const inits = []
+      iface.initClient.methodCall = (method, params, callback) => {
+        inits.push(params.length)
+        callback(params.length === 2 ? errors.shift() || null : null, '')
+      }
+      return inits
+    }
+
+    const addFailing = (errors) => {
+      rpc.addInterface('HmIP-RF', '127.0.0.1', 2010, '/')
+      const iface = rpc.interfaces[0]
+      iface.initRetryDelay = 10
+      return { iface, inits: answerInits(iface, errors) }
+    }
+
+    it('is registered again until the daemon answers, waiting longer each time', async () => {
+      const { iface, inits } = addFailing([new Error('ECONNREFUSED'), new Error('ECONNREFUSED')])
+      rpc.connect()
+      clearTimeout(rpc.watchDogTimer)
+      expect(iface.isRunning).to.be(false)
+      await wait(60)
+      expect(inits).to.eql([2, 2, 2])
+      expect(iface.isRunning).to.be(true)
+      expect(iface.initRetryDelay).to.be(40)
+      expect(log.text('warn')).to.contain('registering HmIP-RF. again')
+    })
+
+    it('is not registered again when it delivers events meanwhile', async () => {
+      const { iface, inits } = addFailing([new Error('timeout')])
+      iface.initRetryDelay = 30
+      rpc.connect()
+      clearTimeout(rpc.watchDogTimer)
+      rpc.dispatchEvent('event', ['HAP_HmIP-RF.', '000A1D8991DA1B:1', 'STATE', true])
+      await wait(60)
+      expect(inits).to.eql([2])
+    })
+
+    it('is not registered again after the interfaces are disconnected', async () => {
+      const { iface, inits } = addFailing([new Error('ECONNREFUSED')])
+      iface.initRetryDelay = 30
+      rpc.connect()
+      clearTimeout(rpc.watchDogTimer)
+      await rpc.disconnectInterfaces()
+      await wait(60)
+      expect(inits).to.eql([2, 1]) // init, then the deregistration
+    })
+
+    it('is not retried after a watchdog reconnect fails, the watchdog tries again itself', () => {
+      const { iface, inits } = addFailing([null, new Error('ECONNREFUSED')])
+      rpc.watchDogTimeout = 300
+      rpc.connect()
+      clearTimeout(rpc.watchDogTimer)
+      iface.lastMessage = Math.floor(Date.now() / 1000) - 301
+      rpc.ccuWatchDog()
+      clearTimeout(rpc.watchDogTimer)
+      expect(inits).to.eql([2, 1, 2])
+      expect(iface.initRetryTimer).to.be(undefined)
+    })
+  })
+
   it('does not start a second reconnect while the first waits for its answer', () => {
     rpc.watchDogTimeout = 1
     rpc.addInterface('CUxD', '127.0.0.1', 1, '/')
