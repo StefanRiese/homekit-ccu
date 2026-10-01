@@ -12,7 +12,7 @@ const expect = require('expect.js')
 const { PNG } = require('pngjs')
 const jpeg = require('jpeg-js')
 const { parseDevDb, parsePictures } = require(path.join(__dirname, '..', 'lib', 'util', 'deviceIcons.js'))
-const { decodeImage, renderSnapshot, renderSnapshotInWorker, loadImage, StillImage } = require(path.join(__dirname, '..', 'lib', 'util', 'doorbellImage.js'))
+const { decodeImage, redirectTarget, renderSnapshot, renderSnapshotInWorker, loadImage, StillImage } = require(path.join(__dirname, '..', 'lib', 'util', 'doorbellImage.js'))
 
 /** a PNG: red square with a transparent border */
 function redSquarePng (size = 40, border = 10) {
@@ -266,6 +266,157 @@ describe('HomeKit-CCU doorbell still image', () => {
       const image = jpeg.decode(await still.snapshot(320, 180), { useTArray: true })
       // a 16:9 picture fills a 16:9 snapshot up to its corners
       expect(pixel(image, 2, 2)[0]).to.be.below(40)
+    })
+  })
+
+  describe('a picture URL that redirects', () => {
+    let server
+    let base
+    let requests
+    let flaky
+    before(async () => {
+      server = http.createServer((request, response) => {
+        requests.push({ url: request.url, authorization: request.headers.authorization })
+        const redirect = (location, status = 302) => { response.writeHead(status, { Location: location }); response.end() }
+        if (request.url === '/bell.png') {
+          response.writeHead(200, { 'Content-Type': 'image/png' })
+          response.end(redSquarePng(20))
+        } else if (request.url === '/relative') {
+          redirect('/bell.png')
+        } else if (request.url === '/chain') {
+          redirect('/moved', 301)
+        } else if (request.url === '/moved') {
+          redirect(base + '/bell.png', 308)
+        } else if (request.url === '/loop') {
+          redirect('/loop')
+        } else if (request.url === '/nowhere') {
+          response.writeHead(302)
+          response.end()
+        } else if (request.url === '/ftp') {
+          redirect('ftp://127.0.0.1/bell.png')
+        } else if (request.url === '/flaky') {
+          if (flaky-- > 0) {
+            response.writeHead(503)
+            response.end()
+          } else {
+            response.writeHead(200)
+            response.end(redSquarePng(20))
+          }
+        } else {
+          response.writeHead(404)
+          response.end()
+        }
+      })
+      await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
+      base = 'http://127.0.0.1:' + server.address().port
+    })
+    after(() => server.close())
+    beforeEach(() => { requests = []; flaky = 0 })
+
+    it('is followed, relative or absolute, over several hops', async () => {
+      expect((await loadImage({ kind: 'url', value: base + '/relative' })).width).to.be(20)
+      expect((await loadImage({ kind: 'url', value: base + '/chain' })).width).to.be(20)
+    })
+
+    it('keeps the user and password of the URL on its own host', async () => {
+      await loadImage({ kind: 'url', value: 'http://homekit:s3cret@127.0.0.1:' + server.address().port + '/relative' })
+      expect(requests.map(r => r.url)).to.eql(['/relative', '/bell.png'])
+      const expected = 'Basic ' + Buffer.from('homekit:s3cret').toString('base64')
+      expect(requests.every(r => r.authorization === expected)).to.be(true)
+    })
+
+    it('fails on a loop, a redirect without target and another protocol', async () => {
+      const reason = async (path) => {
+        let error
+        await loadImage({ kind: 'url', value: base + path }).catch(e => { error = e })
+        return error.message
+      }
+      expect(await reason('/loop')).to.contain('redirects more than 5 times')
+      expect(requests.length).to.be(6)
+      expect(await reason('/nowhere')).to.contain('HTTP 302')
+      expect(await reason('/ftp')).to.contain('ftp:')
+    })
+
+    it('never leads from https to http, nor sends the credentials to another host', () => {
+      expect(() => redirectTarget('https://cam.example/snap', 'http://cam.example/snap')).to.throwException(/https to http/)
+      expect(redirectTarget('http://cam.example/snap', 'https://cam.example/snap')).to.be('https://cam.example/snap')
+      expect(redirectTarget('https://u:p@cam.example/a', '/b')).to.be('https://u:p@cam.example/b')
+      expect(redirectTarget('https://u:p@cam.example/a', 'https://other.example/b')).to.be('https://other.example/b')
+    })
+
+    describe('and a picture that could not be read', () => {
+      const messages = (log) => log.messages.filter(m => m.level === 'warn').map(m => m.text)
+      const logger = () => {
+        const log = { messages: [] }
+        log.warn = (...args) => log.messages.push({ level: 'warn', text: args.slice(2).join(' ') })
+        log.debug = () => {}
+        return log
+      }
+
+      it('is tried again every minute with a refresh of 0, once it is there it is not read again', async () => {
+        flaky = 1
+        let now = 1000
+        const log = logger()
+        const still = new StillImage([{ kind: 'url', value: base + '/flaky' }], log, 'Door', { refreshSeconds: 0, now: () => now })
+        await still.image()
+        expect(still.current).to.be(undefined)
+        now += 30000
+        await still.image()
+        expect(requests.length).to.be(1)
+        now += 31000
+        await still.image()
+        await still.reloading
+        expect((await still.image()).width).to.be(20)
+        expect(requests.length).to.be(2)
+        now += 3600000
+        await still.image()
+        expect(requests.length).to.be(2)
+      })
+
+      it('is tried again after the refresh time when that is shorter', async () => {
+        flaky = 1
+        let now = 1000
+        const still = new StillImage([{ kind: 'url', value: base + '/flaky' }], logger(), 'Door', { refreshSeconds: 10, now: () => now })
+        await still.image()
+        now += 11000
+        await still.image()
+        await still.reloading
+        expect((await still.image()).width).to.be(20)
+      })
+
+      it('goes into the log once for every reason, also when another picture is shown instead', async () => {
+        const file = path.join(tmp, 'device.png')
+        fs.writeFileSync(file, redSquarePng())
+        let now = 1000
+        const log = logger()
+        const still = new StillImage([{ kind: 'url', value: base + '/relative-missing' }, { kind: 'file', value: file }], log, 'Door', { refreshSeconds: 10, now: () => now })
+        await still.image()
+        for (let i = 0; i < 3; i++) {
+          now += 11000
+          await still.image()
+          await still.reloading
+        }
+        expect(messages(log)).to.eql(['picture of file shown instead (url: the picture URL answered HTTP 404)'])
+        // nothing readable at all: the one warning of the first attempt, then silence
+        const none = logger()
+        const plain = new StillImage([{ kind: 'url', value: base + '/relative-missing' }], none, 'Door', { refreshSeconds: 10, now: () => now })
+        await plain.image()
+        for (let i = 0; i < 3; i++) {
+          now += 11000
+          await plain.image()
+          await plain.reloading
+        }
+        expect(messages(none)).to.eql(['no picture (url: the picture URL answered HTTP 404), Apple Home shows a plain image'])
+      })
+
+      it('does not try again without any source', async () => {
+        let now = 1000
+        const still = new StillImage([{ kind: 'url', value: '' }], logger(), 'Door', { refreshSeconds: 0, now: () => now })
+        await still.image()
+        now += 3600000
+        await still.image()
+        expect(requests.length).to.be(0)
+      })
     })
   })
 })

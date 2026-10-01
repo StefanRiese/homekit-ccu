@@ -9,6 +9,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 ## [0.1.4] - unreleased
 
 ### Fixed
+- The picture of a doorbell from a URL was not shown when the URL redirects (for example from http to https, or a camera or webhook behind a proxy): up to 5 redirects are followed now, never from https to http, and the user and password of the URL are sent only to its own host.
+- A doorbell picture that could not be read when the add-on started was never tried again with *Read the picture again after* set to 0; it is tried again every minute now (with another time set, after that time).
+- When the picture of a doorbell could not be loaded, the reason was only in the debug log while Apple Home showed the device picture on white, or a plain image. It is now written to the log as a warning, once for every reason.
 - The menu of the settings page did not scroll on a phone: on a screen lower than the menu (about 820 px, so most phones held upright and every phone held sideways) the entries at its end (debug, log, support, changelog, restart) could not be reached. The menu now scrolls below its title.
 - One timeout of the CCU's script engine (Rega) could empty the stored devices, variables, programs, rooms and functions; on the next start all mapped accessories disappeared from Apple Home, together with their rooms and automations. A database is now only replaced by a complete answer of the CCU, and an empty one that an older version saved is fetched again on the next start.
 - Switching, variables and programs hung until the add-on was restarted when the connection to Rega dropped in the middle of an answer. The request now fails and the next one is served.
