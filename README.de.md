@@ -31,7 +31,7 @@
 - Deine HomeMatic- und HomematicIP-Geräte in der Home-App: dort steuern, in Szenen und Automationen nutzen und per Siri bedienen.
 - Einen Einrichtungsassistenten, der die Räume deiner CCU übernimmt, damit jedes Gerät im richtigen Raum landet.
 - Geräteauswahl aus einer Liste mit Bildern, Suche und Filtern.
-- Türklingeln, die Apple Home als Türklingel zeigt: eine Mitteilung mit Bild beim Klingeln und den Gong auf deinem HomePod. Mit einer Kamera zeigt die Video-Türklingel dazu Livebild und Ton.
+- Türklingeln, die Apple Home als Türklingel zeigt: eine Mitteilung mit Bild beim Klingeln und den Gong auf deinem HomePod; das Bild lässt sich auch als Livebild öffnen. Mit einer Kamera zeigt die Video-Türklingel dazu Livebild und Ton.
 - Verlauf und zusätzliche Werte deiner Sensoren in der Eve-App.
 - Konfiguration direkt in der CCU, geschützt durch deine CCU-Anmeldung.
 

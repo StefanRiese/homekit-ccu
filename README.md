@@ -31,7 +31,7 @@
 - Your HomeMatic and HomematicIP devices in the Home app: control them there, use them in scenes and automations, and ask Siri.
 - A setup assistant that takes over the rooms of your CCU, so every device lands in the right room.
 - Choose your devices from a list with pictures, search and filters.
-- Doorbells that Apple Home shows as doorbells: a ring notification with a picture and the chime on your HomePod. With a camera, the video doorbell adds live video and sound.
+- Doorbells that Apple Home shows as doorbells: a ring notification with a picture and the chime on your HomePod; the picture can also be opened as live view. With a camera, the video doorbell adds live video and sound.
 - History and extra values of your sensors in the Eve app.
 - Configuration right in the CCU, protected by your CCU login.
 
