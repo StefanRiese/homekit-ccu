@@ -9,6 +9,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 ## [0.1.4] - unreleased
 
 ### Fixed
+- The CCU reported an update to an older version for ever when a pre-release (like 0.1.4-rc.1) was installed, because the update check answers the latest release and the CCU only compares the two as text. The check now answers the installed version, so no update is reported, unless the release is newer than it.
 - The picture of a doorbell from a URL was not shown when the URL redirects (for example from http to https, or a camera or webhook behind a proxy): up to 5 redirects are followed now, never from https to http, and the user and password of the URL are sent only to its own host.
 - A doorbell picture that could not be read when the add-on started was never tried again with *Read the picture again after* set to 0; it is tried again every minute now (with another time set, after that time).
 - When the picture of a doorbell could not be loaded, the reason was only in the debug log while Apple Home showed the device picture on white, or a plain image. It is now written to the log as a warning, once for every reason.
