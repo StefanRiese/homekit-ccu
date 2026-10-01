@@ -9,6 +9,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 ## [0.1.4] - unreleased
 
 ### Fixed
+- The menu of the settings page did not scroll on a phone: on a screen lower than the menu (about 820 px, so most phones held upright and every phone held sideways) the entries at its end (debug, log, support, changelog, restart) could not be reached. The menu now scrolls below its title.
 - One timeout of the CCU's script engine (Rega) could empty the stored devices, variables, programs, rooms and functions; on the next start all mapped accessories disappeared from Apple Home, together with their rooms and automations. A database is now only replaced by a complete answer of the CCU, and an empty one that an older version saved is fetched again on the next start.
 - Switching, variables and programs hung until the add-on was restarted when the connection to Rega dropped in the middle of an answer. The request now fails and the next one is served.
 - An interface whose first registration failed when the add-on started (its daemon not ready yet, a refused connection) got no events until the add-on was restarted. It is now registered again after 30 s, then after twice as long each time, at most every 10 minutes.
