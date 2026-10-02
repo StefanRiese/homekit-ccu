@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+- A language menu in the header of the settings page (next to the theme): *Browser language* (as before), *English* or *Deutsch*. The choice is kept per browser and reloads the page.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
