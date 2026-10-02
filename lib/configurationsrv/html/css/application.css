@@ -346,7 +346,8 @@
 /* ---- log view (js/logview.js): colours of Bootstrap, so light and dark mode both fit ---- */
 .log-search-group { width: 17rem; max-width: 100%; }
 .log-view {
-  height: 65vh;
+  /* js/logview.js fitHeight() sets the height left in the window; this is until then */
+  height: 50vh;
   min-height: 16rem;
   overflow: auto;
   padding: .5rem .25rem;
@@ -365,6 +366,6 @@
 .log-empty { padding: .5rem; font-family: var(--bs-body-font-family); }
 .log-view:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 2px; }
 @media (max-width: 575.98px) {
-  .log-view { height: 60vh; font-size: .72rem; }
+  .log-view { font-size: .72rem; }
   .log-search-group { width: 100%; }
 }
