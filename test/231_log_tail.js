@@ -151,6 +151,31 @@ describe('HomeKit-CCU log view: end of the log', () => {
     expect(more.lineLevels).to.eql(['error'])
   })
 
+  it('clears the log and its older part on the settings page, and the view starts anew', async () => {
+    write(numbers(30))
+    fs.writeFileSync(file + '.1', 'older part\n')
+    const infos = []
+    const service = Object.create(ConfigurationService.prototype)
+    service.log = { error () {}, warn () {}, info: (...args) => infos.push(args[0]), debug () {} }
+    service.useAuth = false
+    service.logfile = file
+    const before = await readLogTail(file)
+    const response = { headersSent: false, writeHead () { this.headersSent = true }, end (body) { this.body = body } }
+    await service.processApiCall({ method: 'clearLog' }, response)
+    expect(JSON.parse(response.body)).to.eql({ result: 'cleared' })
+    expect(fs.statSync(file).size).to.be(0)
+    expect(fs.existsSync(file + '.1')).to.be(false)
+    expect(infos).to.eql(['[Config] the log was cleared on the settings page'])
+    // an open view goes on with the new log
+    append(line(1) + '\n')
+    const after = await readLogTail(file, before)
+    expect(after.reset).to.be(true)
+    expect(after.lines).to.eql([line(1)])
+
+    service.logfile = undefined
+    expect(await service.clearLog()).to.eql({ result: 'no log' })
+  })
+
   it('is an api call of the configuration service', async () => {
     write(numbers(3))
     const service = Object.create(ConfigurationService.prototype)
