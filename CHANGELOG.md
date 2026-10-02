@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- *Enable Debug* and *Disable Debug* on the settings page showed no change until the page was reloaded: the page was sent the old mode, before the add-on had switched it, and the next update came 3 minutes later. The button now changes as soon as the debug mode is switched. Each click also started another update every 3 minutes, which no longer happens.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
