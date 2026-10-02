@@ -66,6 +66,12 @@ describe('HomeKit-CCU log view of the settings page', () => {
     expect(searchMatcher('   ', true).valid).to.be(true)
   })
 
+  it('finds the time stamp the view goes back to', async () => {
+    const { stampOf } = await load()
+    expect(stampOf(['    at x', '[10/2/2026, 8:40:20 AM] debug - y', '[10/2/2026, 8:41:00 AM] info - z'])).to.be('10/2/2026, 8:40:20 AM')
+    expect(stampOf(['no stamp'])).to.be(undefined)
+  })
+
   it('has a German text for every text of the view and its menu entry', () => {
     const de = JSON.parse(fs.readFileSync(path.join(html, 'assets', 'de.json')))
     const source = fs.readFileSync(path.join(html, 'js', 'logview.js'), 'utf8')

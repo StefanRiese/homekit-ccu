@@ -26,21 +26,29 @@ describe('HomeKit-CCU log view: end of the log', () => {
   const numbers = (n) => Array.from({ length: n }, (_, i) => line(i + 1))
 
   it('starts with the last lines and goes on with the new ones only', async () => {
-    write(numbers(800))
+    write(numbers(1500))
     const first = await readLogTail(file)
-    expect(first.lines.length).to.be(500)
-    expect(first.lines[0]).to.be(line(301))
-    expect(first.lines[499]).to.be(line(800))
+    expect(first.lines.length).to.be(1000)
+    expect(first.lines[0]).to.be(line(501))
+    expect(first.lines[999]).to.be(line(1500))
     expect(first.offset).to.be(fs.statSync(file).size)
 
     const nothing = await readLogTail(file, { offset: first.offset, file: first.file })
     expect(nothing.lines).to.eql([])
     expect(nothing.offset).to.be(first.offset)
 
-    append(line(801) + '\n' + line(802) + '\n')
+    append(line(1501) + '\n' + line(1502) + '\n')
     const next = await readLogTail(file, { offset: first.offset, file: first.file })
-    expect(next.lines).to.eql([line(801), line(802)])
+    expect(next.lines).to.eql([line(1501), line(1502)])
     expect(next.reset).to.be(false)
+  })
+
+  it('reads further back for 1000 long lines, at most 1 MB', async () => {
+    const long = (n) => line(n) + ' ' + 'x'.repeat(600)
+    write(Array.from({ length: 2000 }, (_, i) => long(i + 1)))
+    const tail = await readLogTail(file)
+    expect(tail.lines.length).to.be(1000)
+    expect(tail.lines[999]).to.be(long(2000))
   })
 
   it('sends a line only once it is complete', async () => {
@@ -56,7 +64,7 @@ describe('HomeKit-CCU log view: end of the log', () => {
 
   it('reads at most maxBytes from the end and leaves out the line cut there', async () => {
     write(numbers(1000))
-    const tail = await readLogTail(file, { maxBytes: 1000 })
+    const tail = await readLogTail(file, { maxBytes: 1000, scanBytes: 1000 })
     expect(tail.lines.length).to.be.lessThan(20)
     expect(tail.lines[tail.lines.length - 1]).to.be(line(1000))
     // every line is whole
@@ -73,7 +81,7 @@ describe('HomeKit-CCU log view: end of the log', () => {
 
   it('cuts multi-byte characters at a line, not in the middle', async () => {
     write(['[x] info - Küche Tür Bad ä ö ü ß €'.repeat(10), 'zweite Zeile mit Umlauten: Schlafzimmer, Kühlschrank'])
-    const tail = await readLogTail(file, { maxBytes: 100 })
+    const tail = await readLogTail(file, { maxBytes: 100, scanBytes: 100 })
     expect(tail.lines).to.eql(['zweite Zeile mit Umlauten: Schlafzimmer, Kühlschrank'])
     expect(tail.offset).to.be(fs.statSync(file).size)
   })
@@ -96,8 +104,51 @@ describe('HomeKit-CCU log view: end of the log', () => {
   })
 
   it('answers no lines while there is no log file', async () => {
-    expect(await readLogTail(file)).to.eql({ offset: 0, file: 0, lines: [], reset: false, skipped: false })
-    expect(await readLogTail(undefined)).to.eql({ offset: 0, file: 0, lines: [], reset: false, skipped: false })
+    const none = { offset: 0, file: 0, last: 'info', lines: [], lineLevels: [], reset: false, skipped: false }
+    expect(await readLogTail(file)).to.eql(none)
+    expect(await readLogTail(undefined)).to.eql(none)
+  })
+
+  // a log full of debug lines: 499 of the last 500 lines were debug ones on a CCU with debug on
+  const debugFlood = (n) => Array.from({ length: n }, (_, i) => `[10/2/2026, 8:41:${String(i % 60).padStart(2, '0')} AM] debug - [HAP ConfigServer] probing channel ${i}`)
+
+  it('reads further back for the levels asked for, when debug lines fill the end of the log', async () => {
+    write(['[10/2/2026, 7:00:00 AM] info - [HAP Server] started', '[10/2/2026, 7:00:01 AM] error - [HAP Server] TypeError: x', '    at Server.reload (Server.js:12:3)', '[10/2/2026, 7:00:02 AM] warn - [HAP Server] slow', ...debugFlood(20000)])
+    expect(fs.statSync(file).size).to.be.greaterThan(1024 * 1024)
+    const all = await readLogTail(file)
+    expect(all.lineLevels.every(level => level === 'debug')).to.be(true)
+
+    const noDebug = await readLogTail(file, { levels: ['error', 'warn', 'info'] })
+    expect(noDebug.lines).to.eql(['[10/2/2026, 7:00:00 AM] info - [HAP Server] started', '[10/2/2026, 7:00:01 AM] error - [HAP Server] TypeError: x', '    at Server.reload (Server.js:12:3)', '[10/2/2026, 7:00:02 AM] warn - [HAP Server] slow'])
+    expect(noDebug.lineLevels).to.eql(['info', 'error', 'error', 'warn'])
+    expect(noDebug.since).to.be('10/2/2026, 7:00:00 AM')
+    expect(noDebug.offset).to.be(fs.statSync(file).size)
+    expect(noDebug.last).to.be('debug')
+
+    expect((await readLogTail(file, { levels: ['error'] })).lines).to.eql(['[10/2/2026, 7:00:01 AM] error - [HAP Server] TypeError: x', '    at Server.reload (Server.js:12:3)'])
+    // no level switched on: no line
+    expect((await readLogTail(file, { levels: [] })).lines).to.eql([])
+  })
+
+  it('reads back at most scanBytes, and tells how far back it read', async () => {
+    write(['[10/2/2026, 6:00:00 AM] warn - [HAP Server] long ago', ...debugFlood(20000)])
+    const tail = await readLogTail(file, { levels: ['warn'], scanBytes: 512 * 1024 })
+    expect(tail.lines).to.eql([])
+    expect(tail.since).to.match(/^10\/2\/2026, 8:41:\d\d AM$/)
+    expect((await readLogTail(file, { levels: ['warn'] })).lines).to.eql(['[10/2/2026, 6:00:00 AM] warn - [HAP Server] long ago'])
+  })
+
+  it('filters the new lines too, a stack trace across two calls with the level of its line', async () => {
+    write(['[10/2/2026, 8:00:00 AM] info - a'])
+    const first = await readLogTail(file, { levels: ['error', 'warn'] })
+    append('[10/2/2026, 8:00:01 AM] debug - b\n[10/2/2026, 8:00:02 AM] error - c\n    at d\n')
+    const next = await readLogTail(file, { offset: first.offset, file: first.file, last: first.last, levels: ['error', 'warn'] })
+    expect(next.lines).to.eql(['[10/2/2026, 8:00:02 AM] error - c', '    at d'])
+    expect(next.last).to.be('error')
+    append('    at e\n[10/2/2026, 8:00:03 AM] debug - f\n')
+    const more = await readLogTail(file, { offset: next.offset, file: next.file, last: next.last, levels: ['error', 'warn'] })
+    expect(more.lines).to.eql(['    at e'])
+    expect(more.lineLevels).to.eql(['error'])
   })
 
   it('is an api call of the configuration service', async () => {
@@ -118,5 +169,9 @@ describe('HomeKit-CCU log view: end of the log', () => {
     const next = await call({ method: 'logTail', offset: String(first.offset), file: String(first.file) })
     expect(next.lines).to.eql([line(4)])
     expect((await call({ method: 'logTail', offset: '../etc', file: 'x' })).lines).to.eql(numbers(4))
+    // the levels of the view; unknown ones are left out
+    append('[10/2/2026, 8:00:05 AM] warn - w\n')
+    expect((await call({ method: 'logTail', levels: 'warn,nonsense' })).lines).to.eql(['[10/2/2026, 8:00:05 AM] warn - w'])
+    expect((await call({ method: 'logTail', levels: '' })).lines).to.eql([])
   })
 })
