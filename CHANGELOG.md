@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- *Reset instance* in the settings never got an answer from the configuration service: the browser kept the request open and the list of bridges was not refreshed. It is answered now and the list is refreshed; a reset that fails or is refused (an unknown bridge) shows a message.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
