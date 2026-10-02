@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+- *Show log* on the settings page (*Log anzeigen*): the log of the add-on on the page instead of only as a download. It starts with the last 500 lines and shows new ones every few seconds while it is open (*Pause* stops that), errors and warnings marked in colour, in the light and the dark mode. The levels can be switched off and the lines searched. Only the end of the log and then the new lines are read, never the whole file.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
