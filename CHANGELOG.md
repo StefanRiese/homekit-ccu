@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- A number variable shown as light sensor (*LuxOmeter*, e.g. the power of a balcony power plant) was refused by HomeKit whenever it was 0, with a warning in the log at every start and refresh, because the lowest light level HomeKit takes is 0.0001 lux. The sensor shows 0.0001 then, and every value of a number variable is kept within the range of its characteristic (a brightness or humidity at most 100) and sent as a number instead of a text.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
