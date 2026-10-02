@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- The log of the add-on (`/var/log/homekit-ccu.log`, in the memory of the CCU) was moved to `homekit-ccu.log.1` at 2 MB only when the add-on started; with debug on it grew by several MB an hour until the next start. It is now moved at 2 MB while running too, and the configuration service writes into the new file instead of into the moved one.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
