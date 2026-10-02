@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Restoring a backup was reported as success also when the add-on refused it (unsafe entries, no `config.json`, not a tar archive) or when no file was uploaded: the dialog closed, nothing was restored and no message said why. Such an upload is refused now with the reason, which the dialog shows, and the dialog stays open for another file.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
