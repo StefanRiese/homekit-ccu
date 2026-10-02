@@ -36,8 +36,8 @@ echo '{}' > package-lock.json`,
   monit: '#!/bin/sh\necho "monit $*" >> "$STUB_CALLS"',
   // no-ops: must never reach the real commands (pgrep/kill would hit real processes)
   pgrep: '#!/bin/sh\nexit 1',
-  killall: '#!/bin/sh\nexit 0',
-  lighttpd: '#!/bin/sh\nexit 0',
+  killall: '#!/bin/sh\necho "killall $*" >> "$STUB_CALLS"',
+  lighttpd: '#!/bin/sh\necho "lighttpd $*" >> "$STUB_CALLS"',
   logger: '#!/bin/sh\nexit 0',
   tclsh: '#!/bin/sh\ncat > /dev/null',
   sleep: '#!/bin/sh\nexit 0'
@@ -56,6 +56,8 @@ const setup = () => {
     LOGFILE: `${root}/homekit-ccu.log`,
     LOCKFILE: `${root}/homekit-ccu-install.lock`,
     LIGHTTPD_CONF_DIR: `${root}/lighttpd`,
+    LIGHTTPD_INIT: `${root}/S50lighttpd`,
+    LIGHTTPD_ANGEL_PIDFILE: `${root}/lighttpd-angel.pid`,
     MONIT_DIR: `${root}/monit`,
     MONIT_BIN: `${bin}/monit`,
     HM_ADDONS_CFG: `${root}/hm_addons.cfg`,
@@ -77,6 +79,8 @@ const setup = () => {
     moduleDir: path.join(addonDir, 'node_modules', 'homekit-ccu'),
     logfile: vars.LOGFILE,
     calls: path.join(root, 'calls'),
+    lighttpdInit: path.join(root, 'S50lighttpd'),
+    angelPidfile: path.join(root, 'lighttpd-angel.pid'),
     www: path.join(root, 'config', 'addons', 'www', 'homekit-ccu'),
     legacy: {
       monitCfg: path.join(root, 'monit', 'monit_hap-homematic.cfg'),
@@ -170,6 +174,32 @@ describe('HomeKit-CCU addon installer', () => {
     }
     expect(t.callLog()).not.to.contain('start-stop-daemon --start')
     expect(t.log()).not.to.contain('Starting HomeKit-CCU')
+  })
+
+  // OpenCCU: lighttpd-angel runs lighttpd, monit watches both by their pid files
+  describe('lighttpd reload', () => {
+    const withInitScript = () => fs.writeFileSync(t.lighttpdInit, '#!/bin/sh\necho "S50lighttpd $*" >> "$STUB_CALLS"\n', { mode: 0o755 })
+    const lighttpdCalls = () => t.callLog().split('\n').filter(line => /^(S50lighttpd|killall|lighttpd) /.test(line))
+
+    it('reloads through the init script while lighttpd-angel runs, without killing lighttpd', () => {
+      withInitScript()
+      fs.writeFileSync(t.angelPidfile, `${process.pid}\n`) // a live process
+      expect(t.run('install').status).to.be(0)
+      expect(t.run('uninstall').status).to.be(0)
+      expect(lighttpdCalls()).to.eql(['S50lighttpd reload', 'S50lighttpd reload'])
+    })
+
+    it('starts lighttpd again through the init script when lighttpd-angel is gone', () => {
+      withInitScript()
+      fs.writeFileSync(t.angelPidfile, '999999999\n') // no such process
+      expect(t.run('install').status).to.be(0)
+      expect(lighttpdCalls()).to.eql(['S50lighttpd stop', 'killall lighttpd', 'S50lighttpd start'])
+    })
+
+    it('restarts lighttpd itself on a system without the init script', () => {
+      expect(t.run('install').status).to.be(0)
+      expect(lighttpdCalls()).to.eql(['killall lighttpd', 'lighttpd -f /etc/lighttpd/lighttpd.conf'])
+    })
   })
 
   describe('legacy hap-homematic cleanup', () => {

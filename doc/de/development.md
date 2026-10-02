@@ -26,8 +26,8 @@ cp /usr/local/addons/homekit-ccu/node_modules/homekit-ccu/etc/homekit_ccu.conf /
 # validate lighttpd config (catches syntax errors before restart)
 lighttpd -t -f /etc/lighttpd/lighttpd.conf
 
-# kill and restart lighttpd proxy
-killall lighttpd; sleep 1; lighttpd -f /etc/lighttpd/lighttpd.conf
+# reload lighttpd (graceful; do not killall it, that also ends lighttpd-angel and monit raises an alarm)
+/etc/init.d/S50lighttpd reload
 
 # print current lighttpd config
 lighttpd -p -f /etc/lighttpd/lighttpd.conf 2>&1

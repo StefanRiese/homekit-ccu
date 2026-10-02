@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- After installing, updating or uninstalling the add-on, OpenCCU reported "WatchDog: lighttpd-restart" and monit showed lighttpd as "Does not exist" for ever, while the WebUI still ran: the installer killed lighttpd, which also ended the lighttpd-angel that runs it, and started a lighttpd of its own that monit does not know. lighttpd is now reloaded through OpenCCU's own init script, gracefully, so a running WebUI page is not cut off. A lighttpd left in this state by an older version is ended and started properly on the next update.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
