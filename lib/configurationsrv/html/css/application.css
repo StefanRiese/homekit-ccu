@@ -344,7 +344,7 @@
 }
 
 /* ---- log view (js/logview.js): colours of Bootstrap, so light and dark mode both fit ---- */
-.log-search { width: 14rem; max-width: 100%; }
+.log-search-group { width: 17rem; max-width: 100%; }
 .log-view {
   height: 65vh;
   min-height: 16rem;
@@ -366,5 +366,5 @@
 .log-view:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 2px; }
 @media (max-width: 575.98px) {
   .log-view { height: 60vh; font-size: .72rem; }
-  .log-search { width: 100%; }
+  .log-search-group { width: 100%; }
 }

@@ -544,6 +544,8 @@
   "The log could not be read, trying again ...": "Das Log konnte nicht gelesen werden, neuer Versuch ...",
   "paused": "angehalten",
   "updated %s": "aktualisiert %s",
+  "Regular expression": "Regulärer Ausdruck",
+  "This is no valid regular expression.": "Das ist kein gültiger regulärer Ausdruck.",
   "This service provides a doorbell in Apple Home: it rings on a key press of the channel (or when its state becomes active in switch or contact mode). Apple Home shows a doorbell only with a camera, so it gets a camera with a still image, which can also be shown as live video": "Dieser Service stellt eine Türklingel in Apple Home zur Verfügung: Sie klingelt bei einem Tastendruck des Kanals (oder wenn sein Zustand im Schalter- oder Kontaktbetrieb aktiv wird). Apple Home zeigt eine Klingel nur mit Kamera an, deshalb bekommt sie eine Kamera mit einem Standbild, das auch als Livebild gezeigt werden kann",
   "This service provides a doorbell in Apple Home that rings on a key press or when a state becomes active. Apple Home shows a doorbell only with a camera, so it gets a camera with a still image, which can also be shown as live video": "Dieser Service stellt eine Türklingel in Apple Home zur Verfügung, die bei einem Tastendruck klingelt oder wenn ein Zustand aktiv wird. Apple Home zeigt eine Klingel nur mit Kamera an, deshalb bekommt sie eine Kamera mit einem Standbild, das auch als Livebild gezeigt werden kann",
   "Picture": "Bild",

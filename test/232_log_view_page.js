@@ -43,6 +43,29 @@ describe('HomeKit-CCU log view of the settings page', () => {
     expect(matches(entry, new Set(['warn']), 'Küche')).to.be(false)
   })
 
+  it('searches as regular expression with the button, in any case', async () => {
+    const { searchMatcher, matches } = await load()
+    const levels = new Set(['info', 'warn'])
+    const line = { text: '[10/2/2026, 8:07:39 AM] info - [HAP Server] [RPC] interface HmIP-RF. is connected', level: 'info' }
+    expect(matches(line, levels, searchMatcher('hmip-rf\\. is', true))).to.be(true)
+    expect(matches(line, levels, searchMatcher('interface (BidCos|HmIP)-RF', true))).to.be(true)
+    expect(matches(line, levels, searchMatcher('^\\[10/2/2026, 8:07:\\d\\d AM\\] info', true))).to.be(true)
+    expect(matches(line, levels, searchMatcher('BidCos-RF', true))).to.be(false)
+    // without the button the same text is searched as it is
+    expect(matches(line, levels, searchMatcher('(BidCos|HmIP)-RF', false))).to.be(false)
+    expect(matches(line, levels, searchMatcher('HmIP-RF. is', false))).to.be(true)
+  })
+
+  it('marks an expression that is no valid one and filters nothing with it', async () => {
+    const { searchMatcher } = await load()
+    const invalid = searchMatcher('interface (HmIP', true)
+    expect(invalid.valid).to.be(false)
+    expect(invalid.test('anything')).to.be(true)
+    // as text the same input is fine
+    expect(searchMatcher('interface (HmIP', false).valid).to.be(true)
+    expect(searchMatcher('   ', true).valid).to.be(true)
+  })
+
   it('has a German text for every text of the view and its menu entry', () => {
     const de = JSON.parse(fs.readFileSync(path.join(html, 'assets', 'de.json')))
     const source = fs.readFileSync(path.join(html, 'js', 'logview.js'), 'utf8')
