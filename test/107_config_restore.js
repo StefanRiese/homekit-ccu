@@ -97,13 +97,28 @@ describe('HomeKit-CCU ConfigurationService.processRestore', () => {
     await waitFor(uploadDirIsEmpty)
   })
 
-  it('answers 200 and logs an error when no file was uploaded', async () => {
+  it('refuses a restore without a file with 400 and logs an error', async () => {
     const { service, calls } = makeService()
     const res = await postRestore(service, 0)
-    expect(res.status).to.be(200)
+    expect(res.status).to.be(400)
+    expect(res.body).to.be('no backup file')
     expect(calls.extracted).to.have.length(0)
     expect(calls.restarts).to.be(0)
     expect(calls.errors.map(args => args[0])).to.contain('[Config] restore: no file in upload')
+  })
+
+  it('refuses a backup that is not restored with 400, does not restart and leaves no file behind', async () => {
+    const { service, calls } = makeService()
+    service.checkAndExtractUploadedConfig = (file) => {
+      calls.extracted.push({ file, existed: fs.existsSync(file) })
+      return false
+    }
+    const res = await postRestore(service)
+    expect(res.status).to.be(400)
+    expect(res.body).to.be('not a valid backup')
+    expect(calls.extracted).to.have.length(1)
+    expect(calls.restarts).to.be(0)
+    await waitFor(uploadDirIsEmpty)
   })
 
   it('rejects a second file with 413 and leaves no uploaded file behind', async () => {
