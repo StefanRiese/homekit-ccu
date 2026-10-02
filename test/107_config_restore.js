@@ -4,7 +4,7 @@ const fs = require('fs')
 const http = require('http')
 const expect = require('expect.js')
 
-// point the restart at a scratch location before the module reads it
+// point the restart at a scratch location (read by restartSystem on every call)
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'hkccu-107-'))
 const rcdScript = path.join(scratch, 'homekit-ccu')
 process.env.HOMEKIT_CCU_RCD = rcdScript
