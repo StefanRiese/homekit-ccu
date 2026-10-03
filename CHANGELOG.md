@@ -14,6 +14,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 - A number variable shown as light sensor (*LuxOmeter*, e.g. the power of a balcony power plant) was refused by HomeKit whenever it was 0, with a warning in the log at every start and refresh, because the lowest light level HomeKit takes is 0.0001 lux. The sensor shows 0.0001 then, and every value of a number variable is kept within the range of its characteristic (a brightness or humidity at most 100) and sent as a number instead of a text.
 ### Added
 - A language menu in the header of the settings page (next to the theme): *Browser language* (as before), *English* or *Deutsch*. The choice is kept per browser and reloads the page.
+- After installing, updating or uninstalling the add-on, OpenCCU reported "WatchDog: lighttpd-restart" and monit showed lighttpd as "Does not exist" for ever, while the WebUI still ran: the installer killed lighttpd, which also ended the lighttpd-angel that runs it, and started a lighttpd of its own that monit does not know. lighttpd is now reloaded through OpenCCU's own init script, gracefully, so a running WebUI page is not cut off. A lighttpd left in this state by an older version is ended and started properly on the next update.
 
 ## [0.1.4] - unreleased
 

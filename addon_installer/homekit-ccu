@@ -14,6 +14,8 @@ REQUIRED_MAJOR=22
 LOGFILE=/var/log/homekit-ccu.log
 LOCKFILE=/var/run/homekit-ccu-install.lock
 LIGHTTPD_CONF_DIR=/etc/config/lighttpd
+LIGHTTPD_INIT=/etc/init.d/S50lighttpd
+LIGHTTPD_ANGEL_PIDFILE=/var/run/lighttpd-angel.pid
 MONIT_DIR=/usr/local/etc
 MONIT_BIN=/usr/bin/monit
 HM_ADDONS_CFG=/etc/config/hm_addons.cfg
@@ -35,6 +37,23 @@ log() {
   local LOGDATE="$(date '+%m/%d/%Y, %I:%M:%S %p' | sed 's|^0||;s|, 0|, |')"
   echo "[$LOGDATE] [HomeKit-CCU] [$TAG] $*" | tee -a ${LOGFILE}
   logger -t homekit-ccu -p user.info "$*"
+}
+
+# Makes lighttpd read its config again. On OpenCCU lighttpd-angel runs lighttpd and monit watches
+# both by their pid files: killing lighttpd ends the angel too, and a lighttpd started by hand has
+# no pid file, so monit raises "WatchDog: lighttpd-restart" and cannot start it while it holds
+# the ports. The init script reloads gracefully (SIGUSR1 to the angel, running requests finish).
+reload_lighttpd() {
+  if [ ! -x "${LIGHTTPD_INIT}" ]; then
+    killall lighttpd 2>/dev/null; sleep 1; lighttpd -f /etc/lighttpd/lighttpd.conf
+  elif kill -0 "$(cat ${LIGHTTPD_ANGEL_PIDFILE} 2>/dev/null)" 2>/dev/null; then
+    "${LIGHTTPD_INIT}" reload >> ${LOGFILE} 2>&1
+  else
+    # no angel (or a CCU without one): also ends a lighttpd that older versions left without it
+    "${LIGHTTPD_INIT}" stop >> ${LOGFILE} 2>&1
+    killall lighttpd 2>/dev/null; sleep 1
+    "${LIGHTTPD_INIT}" start >> ${LOGFILE} 2>&1
+  fi
 }
 
 usage() {
@@ -138,7 +157,7 @@ install() {
   log "install" "Installing lighttpd config."
   mkdir -p ${LIGHTTPD_CONF_DIR}
   cp -af ${MODULE_DIR}/etc/homekit_ccu.conf ${LIGHTTPD_CONF_DIR}/${ADDON_NAME}.conf
-  killall lighttpd 2>/dev/null; sleep 1; lighttpd -f /etc/lighttpd/lighttpd.conf
+  reload_lighttpd
 
   log "install" "Creating HomeKit Button."
   node "${MODULE_DIR}/etc/hm_addon.js" homekit-ccu ${MODULE_DIR}/etc/homekit_ccu_addon.cfg >> ${LOGFILE} 2>&1
@@ -206,7 +225,7 @@ uninstall_config() {
   # remove_lighttpd_config
   log "uninstall" "Removing lighttpd config and reloading."
   rm -f ${LIGHTTPD_CONF_DIR}/${ADDON_NAME}.conf
-  killall lighttpd 2>/dev/null; sleep 1; lighttpd -f /etc/lighttpd/lighttpd.conf
+  reload_lighttpd
 
   # remove_firewall_ports
   if [ -f /lib/libfirewall.tcl ]; then
