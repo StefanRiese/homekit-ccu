@@ -11,6 +11,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 - *Reset instance* in the settings never got an answer from the configuration service: the browser kept the request open and the list of bridges was not refreshed. It is answered now and the list is refreshed; a reset that fails or is refused (an unknown bridge) shows a message.
 - Restoring a backup was reported as success also when the add-on refused it (unsafe entries, no `config.json`, not a tar archive) or when no file was uploaded: the dialog closed, nothing was restored and no message said why. Such an upload is refused now with the reason, which the dialog shows, and the dialog stays open for another file.
 - *Enable Debug* and *Disable Debug* on the settings page showed no change until the page was reloaded: the page was sent the old mode, before the add-on had switched it, and the next update came 3 minutes later. The button now changes as soon as the debug mode is switched. Each click also started another update every 3 minutes, which no longer happens.
+- A number variable shown as light sensor (*LuxOmeter*, e.g. the power of a balcony power plant) was refused by HomeKit whenever it was 0, with a warning in the log at every start and refresh, because the lowest light level HomeKit takes is 0.0001 lux. The sensor shows 0.0001 then, and every value of a number variable is kept within the range of its characteristic (a brightness or humidity at most 100) and sent as a number instead of a text.
 
 ## [0.1.4] - unreleased
 
