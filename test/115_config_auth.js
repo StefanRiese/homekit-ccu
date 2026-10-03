@@ -264,13 +264,16 @@ describe('HomeKit-CCU config server authentication', () => {
     it('takes a restore upload with the session header', async () => {
       ctx = await startService()
       const extracted = []
-      ctx.service.checkAndExtractUploadedConfig = (file) => { extracted.push(file); return false }
+      ctx.service.checkAndExtractUploadedConfig = (file) => { extracted.push(file); return true }
+      let restarts = 0
+      ctx.service.restartSystem = () => { restarts++ }
       const form = new FormData()
       form.append('method', 'restore')
       form.append('file', new Blob([Buffer.from('x')]), 'backup.tar.gz')
       const res = await fetch(`http://127.0.0.1:${ctx.port}/restore/`, { method: 'POST', body: form, headers: { 'X-HomeKit-CCU-Session': SID } })
       expect(res.status).to.be(200)
       expect(extracted).to.have.length(1)
+      expect(restarts).to.be(1)
     })
 
     it('serves api calls without a session when useCCCAuthentication is explicitly false', async () => {

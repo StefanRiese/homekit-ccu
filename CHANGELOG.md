@@ -9,6 +9,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 ### Fixed
 - The test of the restart through the rc.d script failed when the tests of the settings page login ran before it: the path of the script (`HOMEKIT_CCU_RCD`) was read once when the configuration service was loaded. It is read at every restart now; the add-on on the CCU restarts as before.
 - *Reset instance* in the settings never got an answer from the configuration service: the browser kept the request open and the list of bridges was not refreshed. It is answered now and the list is refreshed; a reset that fails or is refused (an unknown bridge) shows a message.
+- Restoring a backup was reported as success also when the add-on refused it (unsafe entries, no `config.json`, not a tar archive) or when no file was uploaded: the dialog closed, nothing was restored and no message said why. Such an upload is refused now with the reason, which the dialog shows, and the dialog stays open for another file.
 
 ## [0.1.4] - unreleased
 
