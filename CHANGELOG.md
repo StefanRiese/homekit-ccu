@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- The test of the restart through the rc.d script failed when the tests of the settings page login ran before it: the path of the script (`HOMEKIT_CCU_RCD`) was read once when the configuration service was loaded. It is read at every restart now; the add-on on the CCU restarts as before.
+
 ## [0.1.4] - unreleased
 
 ### Fixed
