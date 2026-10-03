@@ -80,7 +80,12 @@ chmod +x "${ADDONWWW_DIR}/update-check.cgi"
 mkdir -p /etc/config/lighttpd
 cp -f "${WORKSPACE}/etc/homekit_ccu.conf" "/etc/config/lighttpd/${ADDONNAME}.conf"
 # Reload lighttpd to pick up the new proxy config
-killall lighttpd 2>/dev/null; sleep 1; lighttpd -f /etc/lighttpd/lighttpd.conf
+# (through the init script: a lighttpd killed and started by hand is unknown to lighttpd-angel and monit)
+if [ -x /etc/init.d/S50lighttpd ]; then
+  /etc/init.d/S50lighttpd reload
+else
+  killall lighttpd 2>/dev/null; sleep 1; lighttpd -f /etc/lighttpd/lighttpd.conf
+fi
 echo "  ${ADDONWWW_DIR}/index.html"
 echo "  /etc/config/lighttpd/${ADDONNAME}.conf"
 

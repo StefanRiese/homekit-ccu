@@ -4,6 +4,8 @@
 
 Open the configuration with the **HomeKit** button under *Settings → Control panel → Additional software* of the CCU WebUI (logged in as administrator).
 
+The settings page follows the language of your browser. To use another one, open the language menu in the header (next to the theme) and choose *English* or *Deutsch*; *Browser language* goes back to the default. The choice is kept per browser and reloads the page.
+
 ## Rooms: why a bridge per room
 
 HomeKit itself knows no rooms. A bridge cannot tell Apple Home in which room a device belongs, so Apple Home puts a **new device into the room of its bridge**. If your bridge sits in the "Default Room", every new device lands there.

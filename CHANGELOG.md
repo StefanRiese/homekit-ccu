@@ -6,17 +6,10 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
-### Fixed
-- The test of the restart through the rc.d script failed when the tests of the settings page login ran before it: the path of the script (`HOMEKIT_CCU_RCD`) was read once when the configuration service was loaded. It is read at every restart now; the add-on on the CCU restarts as before.
-- *Reset instance* in the settings never got an answer from the configuration service: the browser kept the request open and the list of bridges was not refreshed. It is answered now and the list is refreshed; a reset that fails or is refused (an unknown bridge) shows a message.
-- Restoring a backup was reported as success also when the add-on refused it (unsafe entries, no `config.json`, not a tar archive) or when no file was uploaded: the dialog closed, nothing was restored and no message said why. Such an upload is refused now with the reason, which the dialog shows, and the dialog stays open for another file.
-- *Enable Debug* and *Disable Debug* on the settings page showed no change until the page was reloaded: the page was sent the old mode, before the add-on had switched it, and the next update came 3 minutes later. The button now changes as soon as the debug mode is switched. Each click also started another update every 3 minutes, which no longer happens.
-- A number variable shown as light sensor (*LuxOmeter*, e.g. the power of a balcony power plant) was refused by HomeKit whenever it was 0, with a warning in the log at every start and refresh, because the lowest light level HomeKit takes is 0.0001 lux. The sensor shows 0.0001 then, and every value of a number variable is kept within the range of its characteristic (a brightness or humidity at most 100) and sent as a number instead of a text.
+## [0.1.4] - unreleased
+
 ### Added
 - A language menu in the header of the settings page (next to the theme): *Browser language* (as before), *English* or *Deutsch*. The choice is kept per browser and reloads the page.
-- After installing, updating or uninstalling the add-on, OpenCCU reported "WatchDog: lighttpd-restart" and monit showed lighttpd as "Does not exist" for ever, while the WebUI still ran: the installer killed lighttpd, which also ended the lighttpd-angel that runs it, and started a lighttpd of its own that monit does not know. lighttpd is now reloaded through OpenCCU's own init script, gracefully, so a running WebUI page is not cut off. A lighttpd left in this state by an older version is ended and started properly on the next update.
-
-## [0.1.4] - unreleased
 
 ### Fixed
 - A device could not be added when its file of saved values (`<host>_<device>_<channel>.pstore`, which keeps for example the last activation) was empty or cut off, as a power loss or a full disk leaves it ("Unexpected end of JSON input"). Such a file is now put aside as `.pstore.corrupt` with one warning in the log, the device starts without its old values, and a values file is written whole or not at all. A value that cannot be written (disk full) is logged instead of failing the device.
@@ -29,6 +22,11 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 - One timeout of the CCU's script engine (Rega) could empty the stored devices, variables, programs, rooms and functions; on the next start all mapped accessories disappeared from Apple Home, together with their rooms and automations. A database is now only replaced by a complete answer of the CCU, and an empty one that an older version saved is fetched again on the next start.
 - Switching, variables and programs hung until the add-on was restarted when the connection to Rega dropped in the middle of an answer. The request now fails and the next one is served.
 - An interface whose first registration failed when the add-on started (its daemon not ready yet, a refused connection) got no events until the add-on was restarted. It is now registered again after 30 s, then after twice as long each time, at most every 10 minutes.
+- *Reset instance* in the settings never got an answer from the configuration service: the browser kept the request open and the list of bridges was not refreshed. It is answered now and the list is refreshed; a reset that fails or is refused (an unknown bridge) shows a message.
+- Restoring a backup was reported as success also when the add-on refused it (unsafe entries, no `config.json`, not a tar archive) or when no file was uploaded: the dialog closed, nothing was restored and no message said why. Such an upload is refused now with the reason, which the dialog shows, and the dialog stays open for another file.
+- *Enable Debug* and *Disable Debug* on the settings page showed no change until the page was reloaded: the page was sent the old mode, before the add-on had switched it, and the next update came 3 minutes later. The button now changes as soon as the debug mode is switched. Each click also started another update every 3 minutes, which no longer happens.
+- A number variable shown as light sensor (*LuxOmeter*, e.g. the power of a balcony power plant) was refused by HomeKit whenever it was 0, with a warning in the log at every start and refresh, because the lowest light level HomeKit takes is 0.0001 lux. The sensor shows 0.0001 then, and every value of a number variable is kept within the range of its characteristic (a brightness or humidity at most 100) and sent as a number instead of a text.
+- After installing, updating or uninstalling the add-on, OpenCCU reported "WatchDog: lighttpd-restart" and monit showed lighttpd as "Does not exist" for ever, while the WebUI still ran: the installer killed lighttpd, which also ended the lighttpd-angel that runs it, and started a lighttpd of its own that monit does not know. lighttpd is now reloaded through OpenCCU's own init script, gracefully, so a running WebUI page is not cut off. A lighttpd left in this state by an older version is ended and started properly on the next update.
 
 ## [0.1.3] - 2026-10-01
 

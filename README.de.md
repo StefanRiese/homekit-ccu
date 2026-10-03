@@ -33,7 +33,7 @@
 - Geräteauswahl aus einer Liste mit Bildern, Suche und Filtern.
 - Türklingeln, die Apple Home als Türklingel zeigt: eine Mitteilung mit Bild beim Klingeln und den Gong auf deinem HomePod; das Bild lässt sich auch als Livebild öffnen. Mit einer Kamera zeigt die Video-Türklingel dazu Livebild und Ton.
 - Verlauf und zusätzliche Werte deiner Sensoren in der Eve-App.
-- Konfiguration direkt in der CCU, geschützt durch deine CCU-Anmeldung.
+- Konfiguration direkt in der CCU, geschützt durch deine CCU-Anmeldung, wahlweise auf Deutsch oder Englisch.
 
 ## Unterstützte Geräte
 

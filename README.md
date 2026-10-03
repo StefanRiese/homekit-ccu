@@ -33,7 +33,7 @@
 - Choose your devices from a list with pictures, search and filters.
 - Doorbells that Apple Home shows as doorbells: a ring notification with a picture and the chime on your HomePod; the picture can also be opened as live view. With a camera, the video doorbell adds live video and sound.
 - History and extra values of your sensors in the Eve app.
-- Configuration right in the CCU, protected by your CCU login.
+- Configuration right in the CCU, protected by your CCU login, in English or German as you like.
 
 ## Supported devices
 
