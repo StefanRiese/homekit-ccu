@@ -6,6 +6,17 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+- *Clear log* (*Log leeren*) in the log view of the settings page: empties the log of the add-on and its older part (`homekit-ccu.log.1`), after a question. The add-on writes on into the emptied log, whose first line says that it was cleared.
+- *Show log* on the settings page (*Log anzeigen*): the log of the add-on on the page instead of only as a download. It starts with the last 1000 lines and shows new ones every few seconds while it is open (*Pause* stops that), errors and warnings marked in colour, in the light and the dark mode. The levels can be switched off and the lines searched, as text or, with the button `.*`, as regular expression (any case; one that is no valid one marks the field). The levels are filtered by the add-on, which reads further back for them (at most 4 MB), so with debug switched off in the view the other lines are found also when debug lines fill the end of the log; the view says how far back it goes. Only the end of the log and then the new lines are read, never the whole file.
+
+### Changed
+- *Enable Debug* (*Debug einschalten*) moved from the menu of the settings page into the log view, as the switch *Debug log* (*Debug-Log*) next to *Pause*: the debug lines are switched on where they are read. The switch shows the mode the add-on reports, so also a change made elsewhere, and goes back when the request is refused.
+- *Download Log* (*Log herunterladen*) is no longer in the menu of the settings page: the log view has the same button below the log.
+
+### Fixed
+- The log of the add-on (`/var/log/homekit-ccu.log`, in the memory of the CCU) was moved to `homekit-ccu.log.1` at 2 MB only when the add-on started; with debug on it grew by several MB an hour until the next start. It is now moved at 2 MB while running too, and the configuration service writes into the new file instead of into the moved one.
+
 ## [0.1.4] - 2026-10-03
 
 ### Added
