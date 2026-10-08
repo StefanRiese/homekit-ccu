@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- *Create/Update the CCU helper program* in the settings of the variable trigger could not be switched off: after saving, the box was ticked again, and the next save switched the helper program back on. A switched off box now stays off.
+
 ## [0.1.4] - 2026-10-03
 
 ### Added
