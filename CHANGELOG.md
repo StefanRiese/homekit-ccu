@@ -6,6 +6,10 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+- A switch channel (STATE on/off) can be added as a contact sensor (window or door contact) in Apple Home, for example a CUxD universal control unit set up as SWITCH for a contact the CCU has no device for ([#22](https://github.com/bloop16/homekit-ccu/issues/22)). On is open, off is closed; *Reverse the values* turns it around. A switch still gets the switch service unless the contact sensor is chosen.
+- CI builds the add-on package of every pull request and push to master, to install on a CCU for testing: it is attached to the run on GitHub (*Artifacts*, kept 30 days) as a pre-release of the next patch version (after 0.1.4: `homekit-ccu-0.1.5-pr.<pull request>.<run>` or `homekit-ccu-0.1.5-dev.<run>`), so the CCU offers the next release as update.
+
 ## [0.1.4] - 2026-10-03
 
 ### Added
