@@ -6,6 +6,9 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+- CI builds the add-on package of every pull request and push to master, to install on a CCU for testing: it is attached to the run on GitHub (*Artifacts*, kept 30 days) as a pre-release of the next patch version (after 0.1.4: `homekit-ccu-0.1.5-pr.<pull request>.<run>` or `homekit-ccu-0.1.5-dev.<run>`), so the CCU offers the next release as update.
+
 ## [0.1.4] - 2026-10-03
 
 ### Added
