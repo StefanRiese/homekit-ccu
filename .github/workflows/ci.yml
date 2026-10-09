@@ -25,3 +25,36 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+
+  # the add-on package of every pull request and push, to install on a CCU for testing
+  # (download it from the run's summary page); a release is built by release.yml only
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Test version
+        id: version
+        # the next patch version as pre-release (0.1.4 -> 0.1.5-pr.22.7 or 0.1.5-dev.7): never taken
+        # for a release, and the next release counts as an update on the CCU
+        run: |
+          VERSION=$(node -p "const [a, b, c] = require('./package.json').version.split('-')[0].split('.').map(Number); \`\${a}.\${b}.\${c + 1}-\${process.env.SUFFIX}\`")
+          npm version "$VERSION" --no-git-tag-version
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        env:
+          SUFFIX: ${{ github.event_name == 'pull_request' && format('pr.{0}.{1}', github.event.number, github.run_number) || format('dev.{0}', github.run_number) }}
+      - name: Build addon tarball
+        run: cd addon_installer && sh genscript.sh
+      - name: Verify tarball layout
+        run: tar tzf addon_installer/homekit-ccu-*.tar.gz | grep -qx homekit-ccu.tgz
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: homekit-ccu-${{ steps.version.outputs.version }}
+          path: addon_installer/homekit-ccu-*.tar.gz
+          if-no-files-found: error
+          retention-days: 30
