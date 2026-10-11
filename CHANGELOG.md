@@ -9,15 +9,18 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 ### Added
 - A switch channel (STATE on/off) can be added as a contact sensor (window or door contact) in Apple Home, for example a CUxD universal control unit set up as SWITCH for a contact the CCU has no device for ([#22](https://github.com/bloop16/homekit-ccu/issues/22)). On is open, off is closed; *Reverse the values* turns it around. A switch still gets the switch service unless the contact sensor is chosen.
 - CI builds the add-on package of every pull request and push to master, to install on a CCU for testing: it is attached to the run on GitHub (*Artifacts*, kept 30 days) as a pre-release of the next patch version (after 0.1.4: `homekit-ccu-0.1.5-pr.<pull request>.<run>` or `homekit-ccu-0.1.5-dev.<run>`), so the CCU offers the next release as update.
+- *Remove helper program* (*Hilfsprogramm entfernen*) next to *Update Trigger* on the settings page: removes the helper program of the variable trigger (`_hap_autotrigger_`) from the CCU after a question, and switches *Create/Update the CCU helper program.* (*CCU Hilfsprogramm erzeugen/aktualisieren*) off, so saving the trigger does not create it again. Before, the program stayed on the CCU when the box was switched off and had to be deleted in the WebUI of the CCU. Only a program of that name is removed.
+
+### Changed
+- The trigger of the variables on the settings page has a card of its own below their list, *Trigger and helper program* (*Trigger und Hilfsprogramm*): the key and *Create/Update the CCU helper program.* in it, *Update Trigger* and *Remove helper program* at its bottom. The button for new variables stays alone below the list.
 
 ### Fixed
 - The interfaces were registered at the CCU before the add-on listened for its events, and when that port (9875) was in use, the add-on kept running without any changes from the CCU (Apple Home showed old states) until it was restarted, with only an error in the log. The interfaces are registered now once the add-on listens; a port in use is tried again after 30 s, then after twice as long each time, at most every 10 minutes.
 - Every save in the settings (which reloads the accessories) added one more listener for new devices of the CCU: after many saves, one message of the CCU about new devices made the add-on read the device list from the CCU as many times at once. It is read once now, however often the settings were saved.
-
-### Fixed
 - An update of the add-on restarted the CCU's web server (lighttpd) also when its configuration for the add-on had not changed, and the installation log showed "Reloading lighttpd: ERROR". lighttpd now only reloads when that configuration changes (a new installation, or a version that changes it).
 - The installation log showed no npm version ("NPM is:"): the CCU removes the upload directory while the installation still runs in it, and npm fails without a working directory. The installation now runs from `/`.
 - Right after the add-on started, Apple Home sometimes showed a device as "No Response" for a few seconds, and the log said that its read handler "didn't respond at all", for example for a thermostat whose values were not known yet. Its reads waited behind the scripts the add-on runs on the CCU at the start (databases, values of all devices). The reads and commands of Apple Home now go before that background work on the CCU.
+- *Create/Update the CCU helper program.* (*CCU Hilfsprogramm erzeugen/aktualisieren*) in the settings of the variable trigger could not be switched off: after saving, the box was ticked again, and the next save switched the helper program back on. After *Update Trigger*, the box also showed off until the page was reloaded, and the next *Update Trigger* switched the helper program off. The box now stays as saved and shows it.
 
 ## [0.1.4] - 2026-10-03
 
