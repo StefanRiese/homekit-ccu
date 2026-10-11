@@ -15,6 +15,7 @@ const { recordingLog } = require(path.join(__dirname, 'helpers', 'recordingLog.j
 function ccuWithRega (answer) {
   const ccu = new HomeMaticCCU(recordingLog(), { storagePath: '/tmp' })
   ccu.scripts = []
+  ccu.afterWaitingRegaRequests = () => Promise.resolve()
   ccu.runRega = (tag, script) => {
     ccu.scripts.push(script)
     return Promise.resolve(answer(script))
@@ -99,6 +100,99 @@ describe('HomeKit-CCU requery and start values', () => {
     expect(ccu.scripts.length).to.be(1)
     expect(received.length).to.be(3) // the accessories get their start values
     expect(ccu.startValuesPending).to.be(false)
+  })
+
+  // battery, tamper and fault datapoints register only after asking Rega whether they exist, so
+  // after the start read took its list: without a start value every read of them went to Rega (#28)
+  describe('datapoints registered while the start values are read', () => {
+    const echoTrue = script => [...script.matchAll(/GetObject\('([^']+)'\)/g)].map(m => m[1] + F + 'true' + R).join('')
+    const asked = script => [...script.matchAll(/GetObject\('([^']+)'\)/g)].map(m => m[1])
+
+    it('reads them with one more bulk script and passes their start values on', async () => {
+      const ccu = ccuWithRega(echoTrue)
+      ccu.startValuesPending = true
+      const received = []
+      const register = address => ccu.registerAddressForEventProcessingAtAccessory(address, (value) => received.push([address, value]))
+      register('HmIP-RF.A:1.STATE')
+      const start = ccu.startValueRefresh()
+      register('HmIP-RF.A:0.LOW_BAT') // after the start read took its list
+      register('HmIP-RF.A:0.SABOTAGE')
+      await start
+      ccu.stopValueRefresh()
+      expect(ccu.scripts.map(asked)).to.eql([['HmIP-RF.A:1.STATE'], ['HmIP-RF.A:0.LOW_BAT', 'HmIP-RF.A:0.SABOTAGE']])
+      expect(received).to.eql([['HmIP-RF.A:1.STATE', 'true'], ['HmIP-RF.A:0.LOW_BAT', 'true'], ['HmIP-RF.A:0.SABOTAGE', 'true']])
+      expect(ccu.startValuesPending).to.be(false)
+    })
+
+    it('answers the reads of Apple Home for them from the cache afterwards', async () => {
+      const ccu = ccuWithRega(echoTrue)
+      ccu.startValuesPending = true
+      const start = ccu.startValueRefresh()
+      ccu.registerAddressForEventProcessingAtAccessory('HmIP-RF.A:0.LOW_BAT', () => {})
+      await start
+      ccu.stopValueRefresh()
+      const scripts = ccu.scripts.length
+      expect(await ccu.getValue('HmIP-RF.A:0.LOW_BAT', true)).to.be('true')
+      expect(ccu.scripts.length).to.be(scripts)
+    })
+
+    it('also reads those registered while that bulk script runs', async () => {
+      const ccu = ccuWithRega(script => {
+        if (asked(script).includes('HmIP-RF.A:0.LOW_BAT')) {
+          ccu.registerAddressForEventProcessingAtAccessory('HmIP-RF.A:0.ERROR_SABOTAGE', () => {})
+        }
+        return echoTrue(script)
+      })
+      ccu.startValuesPending = true
+      const start = ccu.startValueRefresh()
+      ccu.registerAddressForEventProcessingAtAccessory('HmIP-RF.A:0.LOW_BAT', () => {})
+      await start
+      ccu.stopValueRefresh()
+      expect(ccu.scripts.map(asked)).to.eql([['HmIP-RF.A:0.LOW_BAT'], ['HmIP-RF.A:0.ERROR_SABOTAGE']])
+      expect(ccu.getCache('HmIP-RF.A:0.ERROR_SABOTAGE')).to.be('true')
+    })
+
+    it('waits for the setup still asking Rega before it decides that none came later', async () => {
+      const ccu = ccuWithRega(echoTrue)
+      // the last answer about a battery datapoint comes after the start read
+      ccu.afterWaitingRegaRequests = () => {
+        if (!ccu.registered) {
+          ccu.registered = true
+          ccu.registerAddressForEventProcessingAtAccessory('HmIP-RF.A:0.LOW_BAT', () => {})
+        }
+        return Promise.resolve()
+      }
+      ccu.startValuesPending = true
+      ccu.registerAddressForEventProcessingAtAccessory('HmIP-RF.A:1.STATE', () => {})
+      await ccu.startValueRefresh()
+      ccu.stopValueRefresh()
+      expect(ccu.scripts.map(asked)).to.eql([['HmIP-RF.A:1.STATE'], ['HmIP-RF.A:0.LOW_BAT']])
+    })
+
+    it('ends the start read when Rega fails while it waits', async () => {
+      const ccu = ccuWithRega(echoTrue)
+      ccu.afterWaitingRegaRequests = () => Promise.reject(new Error('Rega down'))
+      ccu.startValuesPending = true
+      ccu.registerAddressForEventProcessingAtAccessory('HmIP-RF.A:1.STATE', () => {})
+      let error
+      try { await ccu.startValueRefresh() } catch (e) { error = e }
+      ccu.stopValueRefresh()
+      expect(error.message).to.be('Rega down')
+      expect(ccu.startValuesPending).to.be(false) // later datapoints are read one by one, as before
+    })
+
+    it('stops when a reload stops the refresh', async () => {
+      const ccu = ccuWithRega(script => {
+        ccu.stopValueRefresh() // a reload during the start read
+        return echoTrue(script)
+      })
+      ccu.startValuesPending = true
+      ccu.registerAddressForEventProcessingAtAccessory('HmIP-RF.A:1.STATE', () => {})
+      const start = ccu.startValueRefresh()
+      ccu.registerAddressForEventProcessingAtAccessory('HmIP-RF.A:0.LOW_BAT', () => {})
+      await start
+      expect(ccu.scripts.length).to.be(1)
+    })
   })
 
   it('gives a datapoint registered later its known value at once', () => {
