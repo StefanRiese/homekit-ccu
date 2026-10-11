@@ -57,6 +57,18 @@ describe('HomeKit-CCU Rega queue: Apple Home before background work', () => {
     expect(received).to.eql(['a', 'b', 'c'])
   })
 
+  // the start read of the values waits for the setup of the accessories: a datapoint that asks Rega
+  // whether it exists asks again for the next one as soon as the answer is there (#28)
+  it('settles after the waiting requests, also those that follow each other, without a script', async () => {
+    const running = rega('fetchVariables', true).script('database', 0)
+    await wait(20)
+    const chain = rega('hazDatapoint', false).script('exists 1', 0)
+      .then(() => rega('hazDatapoint', false).script('exists 2', 0))
+    await Rega.afterWaitingRequests()
+    expect(received).to.eql(['database', 'exists 1', 'exists 2'])
+    await Promise.all([running, chain])
+  })
+
   it('keeps the order of the background work', async () => {
     await Promise.all(['a', 'b', 'c'].map(name => rega('fetchDatabase', true).script(name, 0)))
     expect(received).to.eql(['a', 'b', 'c'])
