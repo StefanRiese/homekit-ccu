@@ -17,6 +17,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 ### Fixed
 - An update of the add-on restarted the CCU's web server (lighttpd) also when its configuration for the add-on had not changed, and the installation log showed "Reloading lighttpd: ERROR". lighttpd now only reloads when that configuration changes (a new installation, or a version that changes it).
 - The installation log showed no npm version ("NPM is:"): the CCU removes the upload directory while the installation still runs in it, and npm fails without a working directory. The installation now runs from `/`.
+- Right after the add-on started, Apple Home sometimes showed a device as "No Response" for a few seconds, and the log said that its read handler "didn't respond at all", for example for a thermostat whose values were not known yet. Its reads waited behind the scripts the add-on runs on the CCU at the start (databases, values of all devices). The reads and commands of Apple Home now go before that background work on the CCU.
 
 ## [0.1.4] - 2026-10-03
 
