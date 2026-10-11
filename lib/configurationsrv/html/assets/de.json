@@ -569,5 +569,15 @@
   "unknown program": "Das Programm gibt es in der CCU nicht (mehr).",
   "unknown service": "Unbekannter Gerätetyp.",
   "unknown variable": "Die Variable gibt es in der CCU nicht (mehr).",
+  "Remove helper program": "Hilfsprogramm entfernen",
+  "Trigger and helper program": "Trigger und Hilfsprogramm",
+  "Remove the CCU helper program": "CCU Hilfsprogramm entfernen",
+  "Yes, remove the program": "Ja, Programm entfernen",
+  "Remove the program %s from the CCU? Without it, changes of variables are no longer sent to Apple Home, unless the trigger key is pressed in another way: the Home app still shows the current value when it asks for it, but automations and notifications on a variable no longer start. The box \"%s\" is switched off, so saving the trigger does not create the program again.": "Das Programm %s aus der CCU entfernen? Ohne es werden Änderungen von Variablen nicht mehr an Apple Home gesendet, außer die Trigger-Taste wird anders ausgelöst: Die Home-App zeigt weiter den aktuellen Wert, wenn sie ihn abfragt, aber Automationen und Mitteilungen zu einer Variable starten nicht mehr. Das Kästchen \"%s\" wird ausgeschaltet, damit das Speichern des Triggers das Programm nicht wieder anlegt.",
+  "The helper program was removed from the CCU.": "Das Hilfsprogramm wurde aus der CCU entfernt.",
+  "There is no helper program on the CCU.": "In der CCU gibt es kein Hilfsprogramm.",
+  "The helper program was not removed (%s).": "Das Hilfsprogramm wurde nicht entfernt (%s).",
+  "not a program": "kein Programm",
+  "failed": "fehlgeschlagen",
   "no answer": "keine Antwort vom Konfigurationsdienst"
 }
