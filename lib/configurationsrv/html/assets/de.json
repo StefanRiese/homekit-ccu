@@ -577,6 +577,10 @@
   "The helper program was removed from the CCU.": "Das Hilfsprogramm wurde aus der CCU entfernt.",
   "There is no helper program on the CCU.": "In der CCU gibt es kein Hilfsprogramm.",
   "The helper program was not removed (%s).": "Das Hilfsprogramm wurde nicht entfernt (%s).",
+  "Please select a trigger key first.": "Bitte zuerst eine Trigger-Taste auswählen.",
+  "The trigger was saved, the helper program on the CCU is being updated.": "Der Trigger wurde gespeichert, das Hilfsprogramm in der CCU wird aktualisiert.",
+  "The trigger was saved.": "Der Trigger wurde gespeichert.",
+  "The trigger was not saved (%s).": "Der Trigger wurde nicht gespeichert (%s).",
   "not a program": "kein Programm",
   "failed": "fehlgeschlagen",
   "no answer": "keine Antwort vom Konfigurationsdienst"
