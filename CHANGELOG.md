@@ -13,6 +13,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ### Changed
 - The trigger of the variables on the settings page has a card of its own below their list, *Trigger and helper program* (*Trigger und Hilfsprogramm*): the key and *Create/Update the CCU helper program.* in it, *Update Trigger* and *Remove helper program* at its bottom. The button for new variables stays alone below the list.
+- *Update Trigger* says whether the trigger was saved (and that the helper program is being updated, when its box is ticked), or asks for a trigger key when none is chosen. Before, it gave no answer, and without a key nothing happened.
 
 ### Fixed
 - The interfaces were registered at the CCU before the add-on listened for its events, and when that port (9875) was in use, the add-on kept running without any changes from the CCU (Apple Home showed old states) until it was restarted, with only an error in the log. The interfaces are registered now once the add-on listens; a port in use is tried again after 30 s, then after twice as long each time, at most every 10 minutes.
