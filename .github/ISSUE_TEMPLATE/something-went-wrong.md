@@ -21,4 +21,4 @@ Describe what you see, for example in Apple Home or in the HomeKit-CCU configura
 - iOS / Apple Home:
 
 **Log**
-Turn on debug in the configuration (*Internals → Enable Debug*), reproduce the problem and attach the relevant part of `/var/log/homekit-ccu.log`. The log contains no setup codes, but please check it for anything else you do not want to share.
+Turn on debug in the configuration (*Internals → Show log*, switch *Debug log*), reproduce the problem and attach the relevant part of the log (*Download Log* below the log view, or `/var/log/homekit-ccu.log`). The log contains no setup codes, but please check it for anything else you do not want to share.
