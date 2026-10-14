@@ -8,6 +8,7 @@ All notable changes to HomeKit-CCU are listed here. The format follows
 
 ### Fixed
 - The CCU showed *Configuration data pending* (*Konfigurationsdaten stehen zur Übertragung an*) for an HmIP doorbell (e.g. HmIP-DSD-PCB) mapped as doorbell: the add-on had reported its key presses to the CCU as unused ([#32](https://github.com/bloop16/homekit-ccu/issues/32)). It reported the datapoints it uses before those that it registers only after asking the CCU (low battery, tamper, faults, keys, remotes, doorbells), and one of them reported before was then reported as unused. Now only the datapoints of a device without any accessory are reported as unused, and a datapoint registered after the report is reported as used then, also one that an older version reported as unused.
+- Right after a start, Apple Home showed some devices as "No Response", and the log said that their read handlers "didn't respond at all", for example for thermostats. Every Apple device connects to every bridge at once after a start, and the handshake of each connection ran in JavaScript: on a Raspberry Pi about 115 ms each, which kept the add-on busy for some 15 seconds. The handshakes now use the crypto built into Node.js (about 2 ms each).
 
 ## [0.2.0] - 2026-10-12
 
