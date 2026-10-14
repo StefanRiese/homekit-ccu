@@ -96,6 +96,19 @@ describe('HomeKit-CCU native crypto for the HomeKit handshake', () => {
       original.scalarMult(controller.secretKey, accessory.publicKey))
   })
 
+  it('does nothing for a hap-nodejs without tweetnacl, which does this crypto natively itself', () => {
+    const fs = require('fs')
+    const os = require('os')
+    // a directory with no tweetnacl in it or above it
+    const hapDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hkccu-243-'))
+    try {
+      expect(hapTweetnacl(hapDir)).to.be(undefined)
+      expect(installNativeHapCrypto(hapTweetnacl(hapDir))).to.be(true)
+    } finally {
+      fs.rmSync(hapDir, { recursive: true, force: true })
+    }
+  })
+
   it('leaves a call with wrong key lengths to tweetnacl, with its error', () => {
     const msg = bytes(16)
     expect(() => nacl.sign.detached(msg, bytes(32))).to.throwError(/bad secret key size/)
