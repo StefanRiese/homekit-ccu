@@ -20,6 +20,16 @@ const { StillImage } = require(path.join(__dirname, '..', 'lib', 'util', 'doorbe
 const log = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }
 const hex = (value) => Buffer.from(value, 'hex')
 
+async function waitFor (condition, timeoutMs = 5000) {
+  const start = Date.now()
+  while (!condition()) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error('condition not met within ' + timeoutMs + 'ms')
+    }
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+}
+
 // reads Exp-Golomb and plain bits of an RBSP, to check what the encoder wrote
 class BitReader {
   constructor (buffer) {
@@ -444,7 +454,9 @@ describe('HomeKit-CCU live video of a still image', () => {
       delegate.shutdown()
     })
 
-    it('reads a replaced picture file again and sends it to the running live video', async () => {
+    it('reads a replaced picture file again and sends it to the running live video', async function () {
+      // each frame is rendered in a new worker thread, which takes more than a second on a slow machine
+      this.timeout(15000)
       const file = path.join(os.tmpdir(), `homekit-ccu-still-${process.pid}.png`)
       const png = (value) => {
         const image = new PNG({ width: 16, height: 16 })
@@ -461,12 +473,11 @@ describe('HomeKit-CCU live video of a still image', () => {
         const delegate = new StillImageDelegate(image, 'Door', log, { ...options, refreshPollMs: 20 })
         await prepare(delegate, 'g')
         await start(delegate, 'g')
-        await new Promise(resolve => setTimeout(resolve, 300))
         const session = delegate.sessions.get('g')
+        await waitFor(() => session.stream)
         const before = session.stream.frame
         fs.writeFileSync(file, png(255))
-        await new Promise(resolve => setTimeout(resolve, 600))
-        expect(session.stream.frame).not.to.be(before)
+        await waitFor(() => session.stream.frame !== before)
         expect(session.stream.frame.idr.equals(before.idr)).to.be(false)
         delegate.shutdown()
       } finally {
