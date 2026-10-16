@@ -84,7 +84,9 @@ describe('HomeKit-CCU video doorbell with the ffmpeg of the add-on', () => {
     expect(items.ffmpeg.type).to.be('ffmpeg')
   })
 
-  it('answers snapshots from a configured picture without ffmpeg', async () => {
+  it('answers snapshots from a configured picture without ffmpeg', async function () {
+    // the snapshot is rendered in a new worker thread, which takes more than a second on a slow machine
+    this.timeout(10000)
     const png = new PNG({ width: 16, height: 9 })
     png.data.fill(200)
     const server = http.createServer((request, response) => {
