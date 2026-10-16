@@ -205,7 +205,8 @@ describe('HomeKit-CCU doorbell still image', function () {
       const image = jpeg.decode(await still.snapshot(320, 180), { useTArray: true })
       return pixel(image, 160, 90)[0]
     }
-    const settle = () => new Promise(resolve => setTimeout(resolve, 50))
+    // the reading in the background that a snapshot started, if any; a fixed time is too short on a busy machine
+    const settle = async (still) => { await still.reloading }
 
     it('is read again after the refresh interval, in the background, and shown once changed', async () => {
       const file = path.join(tmp, 'cam.png')
@@ -221,7 +222,7 @@ describe('HomeKit-CCU doorbell still image', function () {
       now += 6000
       // interval over: answered at once with the stored picture, read again meanwhile
       expect(await centre(still)).to.be.below(40)
-      await settle()
+      await settle(still)
       expect(await centre(still)).to.be.above(200)
     })
 
@@ -234,7 +235,7 @@ describe('HomeKit-CCU doorbell still image', function () {
       fs.rmSync(file)
       now += 20000
       await still.snapshot(320, 180)
-      await settle()
+      await settle(still)
       expect(await still.snapshot(320, 180)).to.be(first)
     })
 
@@ -246,7 +247,7 @@ describe('HomeKit-CCU doorbell still image', function () {
       const first = await still.snapshot(320, 180)
       now += 20000
       await still.snapshot(320, 180)
-      await settle()
+      await settle(still)
       expect(await still.snapshot(320, 180)).to.be(first)
     })
 
@@ -259,7 +260,7 @@ describe('HomeKit-CCU doorbell still image', function () {
       fs.writeFileSync(file, solid(230))
       now += 3600000
       await centre(still)
-      await settle()
+      await settle(still)
       expect(await centre(still)).to.be.below(40)
     })
 
