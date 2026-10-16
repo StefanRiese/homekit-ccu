@@ -37,7 +37,11 @@ function pixel (image, x, y) {
 
 const near = (actual, expected) => actual.every((value, index) => Math.abs(value - expected[index]) < 40)
 
-describe('HomeKit-CCU doorbell still image', () => {
+describe('HomeKit-CCU doorbell still image', function () {
+  // every snapshot is rendered in a new worker thread, which starts without compiled code and
+  // takes more than a second on a slow machine; some tests render two of them
+  this.timeout(10000)
+
   let tmp
   beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hkccu-214-')) })
   afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }))
