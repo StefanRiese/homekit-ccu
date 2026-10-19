@@ -126,6 +126,14 @@ describe('HomeKit-CCU addon installer', () => {
     expect(Date.now() - fs.statSync(path.join(t.www, 'index.html')).mtimeMs).to.be.lessThan(60 * 1000)
   })
 
+  it('removes WebUI files an update no longer has', () => {
+    fs.mkdirSync(path.join(t.www, 'js'), { recursive: true })
+    fs.writeFileSync(path.join(t.www, 'js', 'logview.js'), '')
+    expect(t.run('install').status).to.be(0)
+    expect(fs.existsSync(path.join(t.www, 'js', 'logview.js'))).to.be(false)
+    expect(fs.existsSync(path.join(t.www, 'index.html'))).to.be(true)
+  })
+
   // the CCU removes the upload directory update_script ran in while the background install
   // still works; npm needs a working directory that exists
   it('runs npm from an existing directory, not from the upload directory of update_script', () => {
