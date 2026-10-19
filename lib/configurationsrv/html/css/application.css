@@ -343,10 +343,10 @@
   .nd-member { margin-left: .75rem; }
 }
 
-/* ---- log view (js/logview.js): colours of Bootstrap, so light and dark mode both fit ---- */
+/* ---- log view (js/journal.js): colours of Bootstrap, so light and dark mode both fit ---- */
 .log-search-group { width: 17rem; max-width: 100%; }
 .log-view {
-  /* js/logview.js fitHeight() sets the height left in the window; this is until then */
+  /* js/journal.js fitHeight() sets the height left in the window; this is until then */
   height: 50vh;
   min-height: 16rem;
   overflow: auto;
