@@ -1,6 +1,6 @@
 'use strict'
 
-// The log view of the settings page (js/logview.js): the level of each line, the filter, and
+// The log view of the settings page (js/journal.js): the level of each line, the filter, and
 // that every text of the view has a German translation.
 
 const fs = require('fs')
@@ -74,24 +74,38 @@ describe('HomeKit-CCU log view of the settings page', () => {
 
   it('has a German text for every text of the view and its menu entry', () => {
     const de = JSON.parse(fs.readFileSync(path.join(html, 'assets', 'de.json')))
-    const source = fs.readFileSync(path.join(html, 'js', 'logview.js'), 'utf8')
+    const source = fs.readFileSync(path.join(html, 'js', 'journal.js'), 'utf8')
     const texts = [...source.matchAll(/__\('([^']+)'/g)].map(m => m[1])
     // the labels of the level buttons
     texts.push(...[...source.matchAll(/label: '([^']+)'/g)].map(m => m[1]))
-    texts.push('Show log', 'Log')
+    texts.push('Show log', 'Log', 'The log view could not be loaded. An adblocker may block it: allow this page in it, then try again.')
     expect(texts.length).to.be.greaterThan(15)
     expect(texts.filter(text => de[text] === undefined)).to.eql([])
     expect(fs.readFileSync(path.join(html, 'index.html'), 'utf8')).to.contain('id="showLog"')
   })
 
+  it('loads the view only when it is shown, under a name adblockers let through (#37)', () => {
+    // EasyPrivacy blocks /logview.js, and a failed static import stopped the whole page
+    const js = fs.readdirSync(path.join(html, 'js'))
+    expect(js).to.contain('journal.js')
+    expect(js).not.to.contain('logview.js')
+    const application = fs.readFileSync(path.join(html, 'js', 'application.js'), 'utf8')
+    expect(application).not.to.match(/^import .*journal\.js/m)
+    expect(application).not.to.contain('logview.js')
+    expect(application).to.contain("import('./journal.js')")
+    // when it cannot be loaded, the view says so and the next click tries again
+    expect(application).to.contain('this.showLogFailed()')
+    expect(application).to.contain('this.logViewLoad = undefined')
+  })
+
   it('downloads the log from the view, no longer from the menu', () => {
-    const source = fs.readFileSync(path.join(html, 'js', 'logview.js'), 'utf8')
+    const source = fs.readFileSync(path.join(html, 'js', 'journal.js'), 'utf8')
     expect(source).to.contain("this.application.download({ method: 'getLog' })")
     expect(fs.readFileSync(path.join(html, 'index.html'), 'utf8')).not.to.contain('btn_dnlog')
   })
 
   it('switches the debug log in the view, no longer in the menu', () => {
-    const source = fs.readFileSync(path.join(html, 'js', 'logview.js'), 'utf8')
+    const source = fs.readFileSync(path.join(html, 'js', 'journal.js'), 'utf8')
     expect(source).to.contain("id: 'log_debug', role: 'switch'")
     expect(source).to.contain("makeApiRequest({ method: 'debug', enable })")
     // the switch follows the mode the add-on reports with its system info
@@ -100,7 +114,7 @@ describe('HomeKit-CCU log view of the settings page', () => {
   })
 
   it('shows every line as text, never as markup', () => {
-    const source = fs.readFileSync(path.join(html, 'js', 'logview.js'), 'utf8')
+    const source = fs.readFileSync(path.join(html, 'js', 'journal.js'), 'utf8')
     expect(source).to.contain(".addClass('log-line log-' + entry.level).text(entry.text)")
     expect(source).not.to.match(/\.html\(entry/)
   })
