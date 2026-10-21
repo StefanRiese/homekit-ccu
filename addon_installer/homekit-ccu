@@ -152,6 +152,8 @@ install() {
   remove_legacy_hap_homematic
 
   log "install" "Installing WebUI files."
+  # emptied first: a file the new version no longer has (js/logview.js after 0.2.0) would stay
+  rm -rf ${ADDONWWW_DIR}
   mkdir -p ${ADDONWWW_DIR}
   # without -a: the files get the time of the installation. npm packs every file with the same
   # time in 1985, so browsers would take the pages of the last version as years old and fresh.
