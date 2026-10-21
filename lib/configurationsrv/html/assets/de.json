@@ -546,6 +546,7 @@
   "The log could not be read, trying again ...": "Das Log konnte nicht gelesen werden, neuer Versuch ...",
   "paused": "angehalten",
   "updated %s": "aktualisiert %s",
+  "The log view could not be loaded. An adblocker may block it: allow this page in it, then try again.": "Die Log-Ansicht konnte nicht geladen werden. Vielleicht blockiert sie ein Werbeblocker: erlauben Sie diese Seite darin und versuchen Sie es erneut.",
   "Clear log": "Log leeren",
   "Clear log?": "Log leeren?",
   "The log of the add-on is emptied, also its older part. Download it first if you still need it.": "Das Log des Add-ons wird geleert, auch sein älterer Teil. Laden Sie es vorher herunter, wenn Sie es noch brauchen.",
